@@ -88,7 +88,7 @@ class RedisSub(Thread):
 class ComPort(Thread):    
     read_q         = Queue()    
     redis          = redis.Redis()
-    re_data        = re.compile(r'(?:<)(?P<cmd>\d+)(?:>)(.*)(?:<\/)(?P=cmd)', re.DOTALL)
+    re_data        = re.compile(r'(?:<)(?P<cmd>\d+)(?:>)(.*)(?:<\/)(?P=cmd)(?:>)', re.DOTALL)
     redis_send_key = 'ComPort-send'
     redis_read_key = 'ComPort-read'
     redis_pub_channel = 'rtweb'
@@ -96,8 +96,8 @@ class ComPort(Thread):
     
     
     def __init__(self,
-                 port = 8,
-                 packet_timeout=2,
+                 port = '/dev/ttyUSB0',
+                 packet_timeout=1,
                  baudrate=115200,       
                  bytesize=EIGHTBITS,    
                  parity=PARITY_NONE,    
@@ -253,7 +253,7 @@ class ComPort(Thread):
                     self.buffer = self.buffer + new_data
                     #log.debug('found %d bytes inWaiting' % bytes_in_waiting)
 
-                crlf_index = self.buffer.find('\r\n')
+                crlf_index = self.buffer.find('\r\n')                
                 if crlf_index > 0:
                     # log.debug('read line: ' + line)
                     timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
@@ -270,7 +270,7 @@ class ComPort(Thread):
                         
                         # final_data = [timestamp, line]
                         self.redis.publish(self.redis_pub_channel,sjson.dumps({'id':'debug_console','data':final_data}))
-                        self.read_q.put(final_data)
+                        # self.read_q.put(final_data)
                     self.buffer = self.buffer[crlf_index+2:]                        
 
         except Exception as E:
