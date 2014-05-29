@@ -16,18 +16,16 @@ var plot;
 //
 function dbg(message) {
 	console.log(message);
-	show_server_msg(message);
-	//$('#jsdbg').text(message);
+	show_server_msg(message);	
+}
+
+function SendCmd(cmd, val) {
+	return $.getJSON('/cmd/', "cmd=" + cmd + "&param=" + val, function(data) {			
+		$("#cmd_status").text(data.cmd);
+	});
 }
 
 function show_server_msg(message) {
-	//dbg('show_server_msg: ' + message);
-	//$("#server_msg").html(message);
-	//$("#server_msg").html($("#server_msg").text() + message);
-	//$("#server_msg").html($("#server_msg").text() + message);
-	//var psconsole = $('#server_msg');
-	//psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
-		
 	if (debug_all)
 	{	
 		$("#debug_console").html( $("#debug_console").text() + message + '\n');					
@@ -36,13 +34,7 @@ function show_server_msg(message) {
 	}
 }
 
-function console_response_msg(message) {
-	//dbg('show_server_msg: ' + message);
-	//$("#server_msg").html(message);
-	//$("#server_msg").html($("#server_msg").text() + message);
-	//$("#server_msg").html($("#server_msg").text() + message);
-	//var psconsole = $('#server_msg');
-	//psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+function console_response_msg(message) {	
 	$("#json_res").html($("#json_res").text() + "cmd [" + message[1] + "]: " + message[2].data + '\n');
 	var psconsole = $('#json_res');
 	psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
@@ -73,7 +65,7 @@ function set_object_value(id, val){
 // HIGHCHARTS
 //
 //
-function empty_data() {				
+function empty_data() {
 	var data = [], time = (new Date()).getTime(), i;
 	for( i = -999; i <= 0; i++) {
 		data.push([
@@ -256,59 +248,54 @@ function open_websocket(hostname, hostport, hosturl) {
 
 	ws.onmessage = function(event) {
 		dbg('incomming message');
-		var JsonData;
-		try {
-			JsonData = JSON.parse(event.data);			
-			if (JsonData.hasOwnProperty('id')) {
-				console.log(JsonData.id);
-				switch(JsonData.id)
-				{
-					case 'debug_console':
-					{
-						console_response_msg(JsonData.data);
-						console.log(JsonData.data[2].cmd === 'irq_0');
-						if (JsonData.data[2].cmd === 'irq_0'){
-							var msg = JsonData.data[2].data;
-							console.log(msg);
-							power_W = Math.round(3600.0/((Math.pow(2,16)*msg[2] + msg[3])/16e6*1024));						
-							console.log([power_W]);
-							add_measurement([power_W]);
-						}
-						break;
-					}	
-					case 'plot2':
-					{
-						plot.addSeries(JsonData.data);
-						break;
-					}
-					case 'chart':
-					{
-						add_measurement(power_W);
-						break;
-					}
-					default:
-					{	
-						set_object_value(JsonData.id,JsonData.val);
-					}
-				}
-				
-			}
-			else if(JsonData.hasOwnProperty('data')){
-				add_measurement(JsonData.data);
-			}
-			else{
-				add_measurement(JsonData);
-			}
-
-		} catch(e) {
-			dbg('JSON.parse error: "' + e + '". JsonData = ' + JsonData);			
-		}
-		//show_server_msg(event.data);
+		server_message_handler(event.data);
 	};
 	ws.onclose = function() {
 		dbg('closing websockets');
 		$('#live').text('OFFLINE');
 	};
+}
+
+function server_message_handler(data)
+{
+	var JsonData;
+
+	try {
+		JsonData = JSON.parse(data);
+	} catch(e) {
+		dbg('JSON.parse error: "' + e + '". JsonData = ' + JsonData);
+		return;
+
+	}
+	if (JsonData.hasOwnProperty('id')) {
+		console.log(JsonData.id);
+		switch(JsonData.id)
+		{
+			case 'debug_console':
+			{
+				console_response_msg(JsonData.data);
+				console.log(JsonData.data[2].cmd === 'irq_0');
+				if (JsonData.data[2].cmd === 'irq_0'){
+					var msg = JsonData.data[2].data;
+					console.log(msg);
+					power_W = Math.round(3600.0/((Math.pow(2,16)*msg[2] + msg[3])/16e6*1024));						
+					console.log([power_W]);
+					add_measurement([power_W]);
+				}
+				break;
+			}
+			case 'chart':
+			{
+				add_measurement(power_W);
+				break;
+			}
+			default:
+			{	
+				set_object_value(JsonData.id,JsonData.val);
+			}
+		}
+
+	}
 }
 
 function connect_to_websocket_host(){
@@ -454,10 +441,6 @@ $(document).ready(function() {
 		});
 
 
-	function SendCmd(cmd, val) {
-		return $.getJSON('/cmd/', "cmd=" + cmd + "&param=" + val, function(data) {			
-			$("#cmd_status").text(data.cmd);
-		});
-	}
+
 
 });
