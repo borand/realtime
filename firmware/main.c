@@ -153,11 +153,14 @@ int main(void)
 
 	DDRB = _BV(PB0) | _BV(PB1) | _BV(PB5);
 
+	PORTD = _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6) | _BV(PD7);
+
+	cbi(DDRD,PB2);
+
 	sbi(PORTB,PB5);
 	cbi(DDRD,PB2);
 	cbi(DDRD,PB3);
-	sbi(PORTD,PB2);
-	sbi(PORTD,PB3);
+
 
 	// GENERIC COMMANDS
 	cmdlineAddCommand("help", HelpFunction);
@@ -288,7 +291,7 @@ void GetPortD(void)
 	port_d_new = PIND >> 4;
 	if (port_d_last_val != port_d_new)
 	{
-		if(count++ > 10)
+		if(count++ > 50)
 		{
 			rprintfProgStrM("irq_port_d\",\"data\":[");
 			rprintfNum(10,3,FALSE,' ',port_d_new);

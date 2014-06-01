@@ -1,0 +1,10 @@
+firmware/.cproject
+firmware/.gitignore
+firmware/.project
+firmware/.settings/
+*.d
+*.o
+*.elf
+*.map
+*.lss
+venv/*

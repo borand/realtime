@@ -5,6 +5,7 @@ var debug_websocket = false;
 var debug_js = true;
 var debug_all = true;
 
+var ws;
 ////////////////////////////////////////
 // Chart and plot variables
 var plot_height = 450;
@@ -14,9 +15,8 @@ var plot;
 // UTILITY FUNCTIONS
 //
 //
-function dbg(message) {
-	console.log(message);
-	show_server_msg(message);	
+function dbg(message, show) {	
+	show_server_msg(message, show);	
 }
 
 function SendCmd(cmd, val) {
@@ -25,38 +25,41 @@ function SendCmd(cmd, val) {
 	});
 }
 
-function show_server_msg(message) {
-	if (debug_all)
+function show_server_msg(message, show) {	
+	if (show)
 	{	
+		console.log(message);
 		$("#debug_console").html( $("#debug_console").text() + message + '\n');					
 	    var psconsole = $('#debug_console');
 	    psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
 	}
 }
 
-function console_response_msg(message) {	
-	$("#json_res").html($("#json_res").text() + "cmd [" + message[1] + "]: " + message[2].data + '\n');
-	var psconsole = $('#json_res');
-	psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+function console_response_msg(message, show) {	
+	if(show){
+		$("#json_res").html($("#json_res").text() + "cmd [" + message[1] + "]: " + message[2].data + '\n');
+		var psconsole = $('#json_res');
+		psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+	}
 }
 
 function set_object_value(id, val){
 	var datarole = $("#"+id).attr('data-role');
-	dbg('id:' + id + " data-role: " + datarole + "  val: " + val);
+	dbg('id:' + id + " data-role: " + datarole + "  val: " + val, true);
 	switch(datarole){
 		case 'slider':
-			dbg('case: slider');
+			dbg('case: slider', true);
 			$('#' + id).val(val).slider("refresh");
 			break;
 		case 'flipswitch':			
-			dbg('about to flip the switch value to:' + val + ' currently set to: ' + $('#' + id).val());
+			dbg('about to flip the switch value to:' + val + ' currently set to: ' + $('#' + id).val(), true);
 			$('#' + id).val(val).flipswitch("refresh");
 			break;
 		case 'text':
 			$('#' + id).text(val);
 			break
 		default:
-			dbg('case: default');
+			dbg('case: default', true);
 			$('#' + id).val(val)[datarole]("refresh");
 	}
 }
@@ -202,12 +205,10 @@ function draw_plot() {
 	});
 }
 
-
 function add_measurement(value){
+	
 	var t = (new Date()).getTime();
 	var num_of_series = chart.series.length;
-	
-	console.log('num_of_series = ' + num_of_series)-1;	
 	
 	for (i=0;i<value.length;i++){
 		if (i >= num_of_series-1){
@@ -215,7 +216,7 @@ function add_measurement(value){
 		}
 		else{
 			series = chart.series[i];		
-			console.log('series.name = '+ series.name +', value[' + i +'] = ' + value[i]);
+			dbg('series.name = '+ series.name +', value[' + i +'] = ' + value[i],$('#debug_chart').prop("checked"));
 			if(series.name != 'Navigator'){
 				series.addPoint([t, value[i]], true, true);	
 			}
@@ -232,32 +233,35 @@ function parse_message(message_text){
 //
 function open_websocket(hostname, hostport, hosturl) {
 
-	dbg('Attempting to open web socket');
+	dbg('Attempting to open web socket',true);
 	function show_message(message) {
 		show_server_msg(message);		
 	}
 
 	var websocket_address = "ws://" + hostname + ":" + hostport + "/" + hosturl;
-	var ws = new WebSocket(websocket_address);
+	ws = new WebSocket(websocket_address);
 	
 	ws.onopen = function() {
-		dbg('web socket open');
+		debug_websocket = $('#debug_websocket').prop("checked");
+		dbg('web socket open', debug_websocket);
 		$('#live').text('CONNECTED');
 		$("#live").css("background-color",'#B2BB1E');
 	};
 
 	ws.onmessage = function(event) {
-		dbg('incomming message');
+		debug_websocket = $('#debug_websocket').prop("checked");
+		dbg('incomming message', debug_websocket);
 		server_message_handler(event.data);
 	};
 	ws.onclose = function() {
-		dbg('closing websockets');
+		debug_websocket = $('#debug_websocket').prop("checked");
+		dbg('closing websockets', debug_websocket);
 		$('#live').text('OFFLINE');
+		$("#live").css("background-color",'#FF0000');
 	};
 }
 
-function server_message_handler(data)
-{
+function server_message_handler(data){
 	var JsonData;
 
 	try {
@@ -267,31 +271,28 @@ function server_message_handler(data)
 		return;
 
 	}
-	if (JsonData.hasOwnProperty('id')) {
-		console.log(JsonData.id);
+	
+	if (JsonData.hasOwnProperty('id')) {		
 		switch(JsonData.id)
 		{
 			case 'debug_console':
-			{
-				console_response_msg(JsonData.data);
-				console.log(JsonData.data[2].cmd === 'irq_0');
+			{	
 				if (JsonData.data[2].cmd === 'irq_0'){
-					var msg = JsonData.data[2].data;
-					console.log(msg);
-					power_W = Math.round(3600.0/((Math.pow(2,16)*msg[2] + msg[3])/16e6*1024));						
-					console.log([power_W]);
+					dbg(JsonData.data, $('#debug_irq').prop("checked"))
+					console_response_msg(JsonData.data, $('#debug_irq').prop("checked"));
+					var msg = JsonData.data[2].data;				
+					power_W = Math.round(3600.0/((Math.pow(2,16)*msg[2] + msg[3])/16e6*1024));
 					add_measurement([power_W]);
 				}
-				break;
-			}
-			case 'chart':
-			{
-				add_measurement(power_W);
+				else{
+					dbg(JsonData.data, $('#debug_all').prop("checked"))
+					console_response_msg(JsonData.data, true);
+				}
 				break;
 			}
 			default:
 			{	
-				set_object_value(JsonData.id,JsonData.val);
+				set_object_value(JsonData.id, JsonData.val);
 			}
 		}
 
@@ -302,7 +303,7 @@ function connect_to_websocket_host(){
 	var hostname = $('#hostname').val();
 	var hostport = $('#hostport').val();
 	var hosturl  = $('#hosturl').val();
-	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/'+ hosturl);
+	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/'+ hosturl, true);
 	open_websocket(hostname, hostport, hosturl);
 }
 ///////////////////////////////////////////////////////////////////////
@@ -311,7 +312,7 @@ function connect_to_websocket_host(){
 //
 $(document).ready(function() {
 
-	dbg('Document ready');
+	dbg('Document ready', true);
 
 	debug_websocket = $('#debug_websocket').prop("checked");
 	debug_js        = $('#debug_js').prop("checked");
@@ -353,37 +354,27 @@ $(document).ready(function() {
 
 				$.getJSON('/cmd/', "cmd=" + cmd, function(data) {
 					//console.log(String(data));
-					$("#json_res").html($("#json_res").text() + data.res + '\n');					
-					var psconsole = $('#json_res');
-					psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+					//$("#json_res").html($("#json_res").text() + data.res + '\n');					
+					//var psconsole = $('#json_res');
+					//psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
 				});
 			}
 		}
 	});
 	///////////////////////////////////////////////////////////////////////
-	$('#js_eval').keydown(function(e) 
-	{
-		if (e.keyCode == 13) 
-		{
-			var cmd = $("#js_eval").val();
-			dbg('eval(' + cmd + ')');
-			eval(cmd);
-			$("#js_eval").val('');
-		}
-	});
+
 	///////////////////////////////////////////////////////////////////////
 	//
 	// BUTTONS
 	//
-	$(".custom").change(function() {	
-		debug_all = $( "#debug_all" ).prop("checked");
-		dbg("debug_all = " + debug_all);
-		//alert( "Handler for .change() called." );
-		//$("#debug_all").prop("checked", true).checkboxradio("refresh");
-	});
 
 	$("#button_connect").click(function() {	
 		connect_to_websocket_host();
+	});
+
+
+	$("#button_disconnect").click(function() {	
+		ws.close();
 	});
 
 	$("#button_clear_debug_console").click(function() {
@@ -394,53 +385,5 @@ $(document).ready(function() {
 		SendCmd('ping', 0);
 		$("#cmd_status").text("Pressed options_ping button");
 	});
-
-
-	$("#button_power_up").click(function() {
-		cmd = '10';
-		// var t = (new Date()).getTime();
-		// chart.update({
-			// type : 'flags',
-				// data : [{
-					// x : t,
-					// title : 'P',					
-				// }]});
-        
-     
-		// var cssObj = {			
-			// 'color' : 'rgb(1,0,0)'
-		// }
-		 // $('#launch_power').css(cssObj);
-
-
-		if ($('#power_control_enabled').prop("checked")) {
-			$.getJSON('/cmd/', "cmd=" + cmd, function(data) {
-				//console.log(String(data));
-				$("#json_res").html($("#json_res").text() + data.res + '\n');
-				var psconsole = $('#json_res');
-				psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
-			});
-		};
-		});
-
-	
-	$("#button_power_down").click(function() {
-		cmd = '11';			
-		if ($('#power_control_enabled').prop("checked")) {
-			dbg("Power Down");
-			$.getJSON('/cmd/', "cmd=" + cmd, function(data) {
-				//console.log(String(data));
-				$("#json_res").html($("#json_res").text() + data.res + '\n');
-				var psconsole = $('#json_res');
-				psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
-			});
-		}
-		else{
-			dbg("Power control disabled");
-		}
-		});
-
-
-
 
 });
