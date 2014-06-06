@@ -2,6 +2,7 @@ firmware/.cproject
 firmware/.gitignore
 firmware/.project
 firmware/.settings/
+*.idea/*
 *.d
 *.o
 *.elf
