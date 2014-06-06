@@ -279,37 +279,33 @@ class ComPort(Thread):
         log.debug('Exiting run() function')
 
 ############################################################################################
-    def process_q(self):
-        """
-        """
-        if not self.read_q.empty():
-            q_data = self.read_q.get(1,1)
-            log.debug('q_data = %s' % str(q_data[1]))            
-        else    :
-            log.debug('read_q is empty')
 
 if __name__ == '__main__':
-    #log.level = logbook.ERROR
+    
     test_json = 0;
     run       = 1;
-
-    cmd_vector = ['idn', 'adc', 'dio', 'getwh', 'resetwh', 'peek 22', 'owrom', 'owsave 1','owload', \
-                  'owsp','owdata','owwp 3 1', 'owrp 3', 'adsf']
+    
     C = ComPort('/dev/ttyUSB0')
     C.log.level = logbook.ERROR
     C.send('C')
     C.start_thread()
     
     if test_json:
+        cmd_vector = ['idn', 'adc', 'dio', 'getwh', 'resetwh', 'peek 22', 'owrom', 'owsave 1','owload', \
+                  'owsp','owdata','owwp 3 1', 'owrp 3', 'adsf']
         for cmd in cmd_vector:
             try:
                 out = C.query(cmd)
                 print out
             except Exception as E:
                 print E    
+    
     if run:
         R = RedisSub(C)
-        while True:
+        try:
+            while True:
+                do_something()
+        except KeyboardInterrupt:
             pass
 
     R.stop()
