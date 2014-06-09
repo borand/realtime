@@ -84,11 +84,25 @@
 							<h3>Console view</h3>
 						</div>
 						<div class="ui-body ui-body-a">
-							<!-- <div data-role="content"> -->
-							<label for="textarea">Response</label>
+							<!-- <div data-role="content"> -->							
 							<textarea rows="15" name="textarea" id="json_res" data-role="textarea" type="etc."></textarea>
+							
+							<div class="ui-field-contain">
+							<label for="select-chan" class="select">Custom select menu:</label>
+							<select name="select-chan" id="select-chan" data-native-menu="false" data-mini="true" data-inline="true" data-theme="b">
+								<option>Device</option>
+								<option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
+								<option value="/dev/ttyUSB1">/dev/ttyUSB1</option>								
+							</select>
+							</div>
+
+							<div class="ui-field-contain">
 							<label for="text-basic">Command</label>
-							<input type="text" name="text-basic" id="json_cmd" value="">
+							<input type="text" name="text-basic" id="json_cmd" value="" data-inline="true" data-theme="b">
+							</div>
+
+							
+
 						</div><!-- /content -->
 					</div>
 				</div><!-- TAB CONSOLE -->

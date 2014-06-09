@@ -37,7 +37,9 @@ function show_server_msg(message, show) {
 
 function console_response_msg(message, show) {	
 	if(show){
-		$("#json_res").html($("#json_res").text() + "cmd [" + message[1] + "]: " + message[2].data + '\n');
+		dbg(message,true);
+		chan = $("#select-chan").val();
+		$("#json_res").html($("#json_res").text() + chan + ": " + "cmd [" + message[1] + "]: " + message[2].data + '\n');
 		var psconsole = $('#json_res');
 		psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
 	}
@@ -271,6 +273,7 @@ function server_message_handler(data){
 		return;
 
 	}
+	console.log(JsonData)
 	
 	if (JsonData.hasOwnProperty('id')) {		
 		switch(JsonData.id)
@@ -279,13 +282,13 @@ function server_message_handler(data){
 			{	
 				if (JsonData.data[2].cmd === 'irq_0'){
 					dbg(JsonData.data, $('#debug_irq').prop("checked"))
-					console_response_msg(JsonData.data, $('#debug_irq').prop("checked"));
-					var msg = JsonData.data[2].data;				
+					msg = JsonData.data[2].data;
+					console_response_msg(JsonData.data, $('#debug_irq').prop("checked"));					
 					power_W = Math.round(3600.0/((Math.pow(2,16)*msg[2] + msg[3])/16e6*1024));
 					add_measurement([power_W]);
 				}
 				else{
-					dbg(JsonData.data, $('#debug_all').prop("checked"))
+					dbg(JsonData.data, $('#debug_all').prop("checked"))					
 					console_response_msg(JsonData.data, true);
 				}
 				break;
@@ -352,7 +355,8 @@ $(document).ready(function() {
 
 				$("#json_res").append("cmd>" + cmd + "\n");
 
-				$.getJSON('/cmd/', "cmd=" + cmd, function(data) {
+				chan = $("#select-chan").val();
+				$.getJSON('/cmd/',  { "cmd" : cmd, "chan": chan}, function(data) {
 					//console.log(String(data));
 					//$("#json_res").html($("#json_res").text() + data.res + '\n');					
 					//var psconsole = $('#json_res');

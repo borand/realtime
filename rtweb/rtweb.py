@@ -49,12 +49,12 @@ class MainHandler(tornado.web.RequestHandler):
 class CmdHandler(tornado.web.RequestHandler):
     def get(self):
         cmd  = self.get_argument("cmd", None)
-        param = self.get_argument("param", None)
-        msg  = simplejson.dumps({'cmd' : cmd, 'param' : param, 'res' : 'OK'})
+        chan = self.get_argument("chan", None)
+        #msg  = simplejson.dumps({'cmd' : cmd, 'chan' : chan, 'res' : 'OK'})
         #self.write('cmd= %s  para= %s' % (cmd, para))
         #print('CmdHandler(%s)' % cmd)
         #self.write(msg)
-        c.publish('cmd',cmd)
+        c.publish(chan + '-cmd',cmd)
 
 class BerHandler(tornado.web.RequestHandler):
     def get(self, ber1, ber2):        

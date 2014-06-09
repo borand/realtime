@@ -35,6 +35,8 @@ STOPBITS_ONE, STOPBITS_TWO = (1, 2)
 FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS = (5,6,7,8)
 TIMEOUT = 2
 
+EXCHANGE = 'ComPort'
+
 ##########################################################################################
 #
 class RedisSub(Thread):
@@ -43,7 +45,7 @@ class RedisSub(Thread):
         Thread.__init__(self)
         self.interface = interface
         self.redis     = redis.Redis(host=host)
-        self.channel   = channel      
+        self.channel   = interface.serial.port+"-cmd"
         self.pubsub    = self.redis.pubsub()
         self.Log       = Logger('RedisSub')
         self.Log.debug('__init__(channel=%s)' % self.channel)
@@ -85,13 +87,11 @@ class RedisSub(Thread):
 
 ##########################################################################################
 class ComPort(Thread):    
-    read_q         = Queue()    
-    redis          = redis.Redis()
+    read_q         = Queue()
     re_data        = re.compile(r'(?:<)(?P<cmd>\d+)(?:>)(.*)(?:<\/)(?P=cmd)(?:>)', re.DOTALL)
     redis_send_key = 'ComPort-send'
     redis_read_key = 'ComPort-read'
     redis_pub_channel = 'rtweb'
-    log = Logger('ComPort')    
     
     def __init__(self,
                  port = '/dev/ttyUSB0',
@@ -103,24 +103,25 @@ class ComPort(Thread):
                  xonxoff=0,             
                  rtscts=0,              
                  writeTimeout=None,     
-                 dsrdtr=None            
-                 ):
-        '''
-        Initialise the asynchronous serial object
-        '''
+                 dsrdtr=None,
+                 host='127.0.0.1'):
         
         Thread.__init__(self)
+
         self.serial = serial.Serial(port, baudrate, bytesize, parity, stopbits, packet_timeout, xonxoff, rtscts, writeTimeout, dsrdtr)
-        
+        self.log = Logger('ComPort-%s' % self.serial.port)
+
         self.running = Event()
         self.buffer  = ''
-        self.log = Logger('ComPort')
-        self.log.info('ComPort(is_alive=%d, serial_port_open=%d)' % (self.is_alive(), not self.serial.closed))
-
-        if not self.redis.sismember('ComPort',self.serial.port):
-            result = self.redis.sadd('ComPort',self.serial.port)
-
         self.start_thread()
+
+        self.redis = redis.Redis(host=host)
+
+        # Register the new instance with the redis exchange
+        if not self.redis.sismember(EXCHANGE,self.serial.port):
+            result = self.redis.sadd(EXCHANGE,self.serial.port)
+
+        self.log.debug('ComPort(is_alive=%d, serial_port_open=%d, redis_host=%s)' % (self.is_alive(), not self.serial.closed, host))
 
     def __del__(self):
         self.log.debug("About to delete the object")
@@ -186,8 +187,12 @@ class ComPort(Thread):
         serial_data = ''
         if self.is_alive():
             try:
-                #return self.read_q.get(1,1)
-                return self.redis.get(self.redis_read_key)
+                read_str = self.redis.get(self.redis_read_key)
+                if not None:
+                    self.redis.delete(self.redis_read_key)
+                    return read_str
+                else:
+                    return ''
             except:
                 return ''
 
@@ -197,8 +202,8 @@ class ComPort(Thread):
                 done = 0
                 while time.clock() - to < TIMEOUT and not done:
                     if self.is_alive():
-                        if not self.read_q.empty():
-                            tmp = self.read_q.get_nowait()
+                        tmp = self.redis.get(self.redis_read_key)
+                        if not None:
                             serial_data += tmp[1]
                     else:                        
                         n = self.serial.inWaiting()
@@ -212,6 +217,8 @@ class ComPort(Thread):
                 self.redis.publish('error',sjson.dumps(error_msg))
                 serial_error = 1
         else:
+            error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : 'serial port appears to be closed'}
+            self.redis.publish('error',sjson.dumps(error_msg))
             serial_error = 2
         
         self.redis.set(self.redis_read_key,serial_data)
@@ -261,7 +268,7 @@ class ComPort(Thread):
                     #self.log.debug('found %d bytes inWaiting' % bytes_in_waiting)
 
                 crlf_index = self.buffer.find('\r\n')                
-                if crlf_index > 0:
+                if crlf_index > -1:
                     # self.log.debug('read line: ' + line)
                     timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
                     line = self.buffer[0:crlf_index]
@@ -274,12 +281,13 @@ class ComPort(Thread):
                         except Exception as E:
                             error_msg = {'source' : 'ComPort', 'function' : 'def run() - inner', 'error' : E.message}
                             self.redis.publish('error',sjson.dumps(error_msg))
-                            final_data = [timestamp, -1, line] 
-                        
-                        final_data = [timestamp, line]
-                        self.redis.publish(self.redis_pub_channel,sjson.dumps({'id':'debug_console','data':final_data}))
+                            final_data = [timestamp, -1, line]
+
                         #self.read_q.put(final_data)
-                    self.buffer = self.buffer[crlf_index+2:]                        
+                        self.redis.publish(self.redis_pub_channel, sjson.dumps({'port' : self.serial.port, 'id':'debug_console','data':final_data}))
+                        self.redis.set(self.redis_read_key,line)
+
+                    self.buffer = self.buffer[crlf_index+2:]
 
         except Exception as E:
             error_msg = {'source' : 'ComPort', 'function' : 'def run() - outter', 'error' : E.message}
@@ -297,8 +305,6 @@ if __name__ == '__main__':
     
     C = ComPort('/dev/ttyUSB0')
     C.log.level = logbook.DEBUG
-    C.send('C')
-    C.start_thread()
     
     if test_json:
         cmd_vector = ['idn', 'adc', 'dio', 'getwh', 'resetwh', 'peek 22', 'owrom', 'owsave 1','owload', \
@@ -314,7 +320,7 @@ if __name__ == '__main__':
         R = RedisSub(C)
         try:
             while True:
-                do_something()
+                pass
         except KeyboardInterrupt:
             pass
 
