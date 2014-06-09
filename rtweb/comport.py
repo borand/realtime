@@ -35,10 +35,6 @@ STOPBITS_ONE, STOPBITS_TWO = (1, 2)
 FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS = (5,6,7,8)
 TIMEOUT = 2
 
-log = Logger('ComPort')
-log.info("2013.12.15 20:23")
-log.level = logbook.ERROR
-
 ##########################################################################################
 #
 class RedisSub(Thread):
@@ -68,19 +64,22 @@ class RedisSub(Thread):
 
     def run(self):
         self.Log.debug('run()')
-        for item in self    .pubsub.listen():
-            if item['data'] == "unsubscribe":
-                self.pubsub.unsubscribe()
-                self.Log.info("unsubscribed and finished")
-                break
-            else:
-                cmd = item['data']
-                if isinstance(cmd,str):
-                    self.Log.debug(cmd)
-                    self.interface.send(item['data'])
+        try:
+            for item in self.pubsub.listen():
+                if item['data'] == "unsubscribe":
+                    self.pubsub.unsubscribe()
+                    self.Log.info("unsubscribed and finished")
+                    break
                 else:
-                    self.Log.debug(cmd)
-
+                    cmd = item['data']
+                    if isinstance(cmd,str):
+                        self.Log.debug(cmd)
+                        self.interface.send(item['data'])
+                    else:
+                        self.Log.debug(cmd)
+        except Exception as E:
+            error_msg = {'source' : 'RedisSub', 'function' : 'def run(self):', 'error' : E.message}
+            self.redis.publish('error',sjson.dumps(error_msg))
                 
         self.Log.debug('end of run()')
 
@@ -92,8 +91,7 @@ class ComPort(Thread):
     redis_send_key = 'ComPort-send'
     redis_read_key = 'ComPort-read'
     redis_pub_channel = 'rtweb'
-    redis_sub_channel = 'cmd'
-    
+    log = Logger('ComPort')    
     
     def __init__(self,
                  port = '/dev/ttyUSB0',
@@ -107,7 +105,6 @@ class ComPort(Thread):
                  writeTimeout=None,     
                  dsrdtr=None            
                  ):
-
         '''
         Initialise the asynchronous serial object
         '''
@@ -118,18 +115,25 @@ class ComPort(Thread):
         self.running = Event()
         self.buffer  = ''
         self.log = Logger('ComPort')
-        log.info('ComPort(is_alive=%d, serial_port_open=%d)' % (self.is_alive(), not self.serial.closed))
+        self.log.info('ComPort(is_alive=%d, serial_port_open=%d)' % (self.is_alive(), not self.serial.closed))
+
+        if not self.redis.sismember('ComPort',self.serial.port):
+            result = self.redis.sadd('ComPort',self.serial.port)
+
+        self.start_thread()
 
     def __del__(self):
-        log.debug("About to delete the object")
+        self.log.debug("About to delete the object")
         self.close()
-        log.debug("Closing serial interface")
+        self.log.debug("Closing serial interface")
         self.serial.close()
         if self.serial.closed:
-            log.error("The serial connection still appears to be open")
+            self.log.error("The serial connection still appears to be open")
         else:
-            log.debug("The serial connection is closed")
-        log.debug("Object deleted")
+            self.log.debug("The serial connection is closed")
+        self.log.debug("Object deleted")
+        if self.redis.sismember('ComPort',self.serial.port):
+            self.redis.srem('ComPort',self.serial.port)
         
     def start_thread(self):
         '''
@@ -137,7 +141,7 @@ class ComPort(Thread):
         thread.
         '''
 
-        log.debug('start_thread()')
+        self.log.debug('start_thread()')
         self.serial.flushInput()
         self.running.set()
         self.start()
@@ -152,7 +156,7 @@ class ComPort(Thread):
         '''
         if len(data) == 0:               
             return
-        log.debug("send(cmd=%s)" % data)
+        self.log.debug("send(cmd=%s)" % data)
         # Automatically append \n by default, but allow the user to send raw characters as well
         if CR:
             if (data[-1] == "\n"):
@@ -182,7 +186,8 @@ class ComPort(Thread):
         serial_data = ''
         if self.is_alive():
             try:
-                return self.read_q.get(1,1)
+                #return self.read_q.get(1,1)
+                return self.redis.get(self.redis_read_key)
             except:
                 return ''
 
@@ -202,7 +207,9 @@ class ComPort(Thread):
                     if waitfor in serial_data:
                         done = 1
                 serial_error = 0
-            except:
+            except Exception as E:
+                error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : E.message}
+                self.redis.publish('error',sjson.dumps(error_msg))
                 serial_error = 1
         else:
             serial_error = 2
@@ -234,7 +241,7 @@ class ComPort(Thread):
         '''
         Close the listening thread.
         '''
-        log.debug('close() - closing the worker thread')
+        self.log.debug('close() - closing the worker thread')
         self.running.clear()
 
     def run(self):
@@ -244,18 +251,18 @@ class ComPort(Thread):
         '''
         
         try:            
-            log.debug('Starting the listner thread')            
+            self.log.debug('Starting the listner thread')            
             while(self.running.isSet()):
                 bytes_in_waiting = self.serial.inWaiting()                
                 
                 if bytes_in_waiting:
                     new_data = self.serial.read(bytes_in_waiting)
                     self.buffer = self.buffer + new_data
-                    #log.debug('found %d bytes inWaiting' % bytes_in_waiting)
+                    #self.log.debug('found %d bytes inWaiting' % bytes_in_waiting)
 
                 crlf_index = self.buffer.find('\r\n')                
                 if crlf_index > 0:
-                    # log.debug('read line: ' + line)
+                    # self.log.debug('read line: ' + line)
                     timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
                     line = self.buffer[0:crlf_index]
                     temp = self.re_data.findall(line)
@@ -265,18 +272,21 @@ class ComPort(Thread):
                             final_data = [timestamp, sjson.loads(temp[0][0]), sjson.loads(temp[0][1])]
                             self.redis.publish('irq',sjson.dumps(final_data))
                         except Exception as E:
-                            log.error(E.message + "  line %s" % line)                            
+                            error_msg = {'source' : 'ComPort', 'function' : 'def run() - inner', 'error' : E.message}
+                            self.redis.publish('error',sjson.dumps(error_msg))
                             final_data = [timestamp, -1, line] 
                         
-                        # final_data = [timestamp, line]
+                        final_data = [timestamp, line]
                         self.redis.publish(self.redis_pub_channel,sjson.dumps({'id':'debug_console','data':final_data}))
-                        # self.read_q.put(final_data)
+                        #self.read_q.put(final_data)
                     self.buffer = self.buffer[crlf_index+2:]                        
 
         except Exception as E:
-            log.error("Exception occured, within the run function: %s" % E.message)
+            error_msg = {'source' : 'ComPort', 'function' : 'def run() - outter', 'error' : E.message}
+            self.redis.publish('error',sjson.dumps(error_msg))
+            self.log.error("Exception occured, within the run function: %s" % E.message)
         
-        log.debug('Exiting run() function')
+        self.log.debug('Exiting run() function')
 
 ############################################################################################
 
@@ -286,7 +296,7 @@ if __name__ == '__main__':
     run       = 1;
     
     C = ComPort('/dev/ttyUSB0')
-    C.log.level = logbook.ERROR
+    C.log.level = logbook.DEBUG
     C.send('C')
     C.start_thread()
     

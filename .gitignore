@@ -7,4 +7,5 @@ firmware/.settings/
 *.elf
 *.map
 *.lss
+*.pyc
 venv/*
