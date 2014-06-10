@@ -91,8 +91,10 @@
 							<label for="select-chan" class="select">Custom select menu:</label>
 							<select name="select-chan" id="select-chan" data-native-menu="false" data-mini="true" data-inline="true" data-theme="b">
 								<option>Device</option>
-								<option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
-								<option value="/dev/ttyUSB1">/dev/ttyUSB1</option>								
+                                {% for dev in interfaces %}
+								<option value="{{dev}}">{{dev}}</option>
+                                {% end %}
+
 							</select>
 							</div>
 
