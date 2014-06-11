@@ -12,26 +12,15 @@ import sh
 import re
 import logbook
 
+from common import get_host_ip
+
 from redis import Redis
 from comport import EXCHANGE
 
 from tornado.options import define, options
 
-define("port", default=8888, help="run on the given port", type=int)
 
-##########################################################################################
-#
-#
-def get_host_ip():
-    """
-    parses ifconfig system command and returns host ip
-    """
-    ip_exp = re.compile(r'(?:eth\d.*?inet addr\:)(\d{1,3}\.\d{1,3}.\d{1,3}.\d{1,3})',re.DOTALL)
-    ip_out = ip_exp.findall(sh.ifconfig().stdout)    
-    if len(ip_out) > 0:        
-        return  ip_out[0]
-    else:
-        return '127.0.0.1'
+define("port", default=8888, help="run on the given port", type=int)
 
 ##########################################################################################
 #
@@ -41,19 +30,16 @@ redis_host_ip = get_host_ip()
 host_ip       = get_host_ip()
 redis_pubsub_channel = 'rtweb'
 
-c = tornadoredis.Client(host=redis_host_ip)
-c.connect()
-
+#c = tornadoredis.Client(host=redis_host_ip)
+#c.connect()
 R = Redis()
-
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        # print(self.request)
-        tmp = R.smembers('ComPort')
-        print(str(tmp))
-        interfaces = list(tmp)
+        interfaces = list(R.smembers('ComPort'))
+        dynamic_content = { "title" : "RT WEB", "host_ip" : host_ip, "page_title" : 'Test', "interfaces" : interfaces}
         self.render("rtweb.html", title="RT WEB", host_ip=host_ip, page_title='Test', interfaces=interfaces)
+        #self.render("rtweb.html", dynamic_content)
 
 class CmdHandler(tornado.web.RequestHandler):
     def get(self):
@@ -68,7 +54,7 @@ class CmdHandler(tornado.web.RequestHandler):
 class NewMessageHandler(tornado.web.RequestHandler):
     def post(self):
         message = self.get_argument('message')
-        c.publish(redis_pubsub_channel, message)
+        R.publish(redis_pubsub_channel, message)
         self.set_header('Content-Type', 'text/plain')
         self.write('sent: %s' % (message,))
 

@@ -15,20 +15,16 @@ Options:
 """
 
 import serial
-import struct
 import time
 import re
 import simplejson as sjson
 import logbook
+import redis
 
 from threading import Thread,Event
-from Queue import Queue, Empty
-from warnings import *
+from Queue import Queue
 from datetime import datetime
 from logbook import Logger
-from docopt import docopt
-
-import redis
 
 PARITY_NONE, PARITY_EVEN, PARITY_ODD = 'N', 'E', 'O'
 STOPBITS_ONE, STOPBITS_TWO = (1, 2)
