@@ -28,7 +28,7 @@ define("port", default=8888, help="run on the given port", type=int)
 log = logbook.Logger('rtweb.py')
 redis_host_ip = get_host_ip()
 host_ip       = get_host_ip()
-redis_pubsub_channel = 'rtweb'
+redis_pubsub_channel = ('rtweb', 'error')
 
 #c = tornadoredis.Client(host=redis_host_ip)
 #c.connect()

@@ -9,6 +9,11 @@ import psutil
 ##########################################################################################
 #
 #
+
+# nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/rtweb.py > /dev/null &
+# nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/comport.py > /dev/null &
+# nohup ~/venv/realtime/bin/rqworker > /dev/null &
+
 def get_host_ip():
     """
     parses ifconfig system command and returns host ip
@@ -21,10 +26,20 @@ def get_host_ip():
         return '127.0.0.1'
 
 def get_python_process_info():
+    out = []
+    for p in psutil.process_iter():
+        cmd = p.cmdline        
+        if len(cmd) > 0 and "python" in cmd[0]:
+            out.append(p)
+            print(p.cmdline)
+    return out
+
+def get_process_info(process):
     for p in psutil.process_iter():
         cmd = p.cmdline
-        if len(cmd) > 0 and "python" in cmd[0]:
-            print(p.cmdline)
+        if len(cmd) > 1 and process in cmd[1]:
+            print(p)
+            return p
 
 if __name__ == "__main__":
     #print(get_host_ip())

@@ -1,5 +1,5 @@
 import threading
-
+import click
 from redis import Redis
 from rq import Queue
 from logbook import Logger
@@ -7,6 +7,8 @@ from datastore import submit
 import simplejson as sjson
 import datetime
 import time
+
+from common import get_host_ip
 
 ##########################################################################################
 class IrqSubmit(threading.Thread):
@@ -52,6 +54,8 @@ class IrqSubmit(threading.Thread):
                 self.pubsub.unsubscribe()
                 self.Log.info("unsubscribed and finished")
                 break
+            if item['data'] == "ERROR_TEST":
+                self.redis.publish('error', __name__ + ": ERROR_TEST")
             else:
                 self.process_message(item)
         self.Log.debug('end of run()')
@@ -94,6 +98,26 @@ class IrqSubmit(threading.Thread):
             self.Log.error(E.message)
             self.redis.publish('error', E.message)
 
+
+
+
+@click.command()
+@click.option('--channel', default='irq')
+@click.option('--host', default=get_host_ip())
+@click.option('--submit_to', default=get_host_ip())
+
+def StartIqrSubmit(channel, host, submit_to):
+    print"StartIqrSubmit(%s, %s, %s)" % (channel, host, submit_to)
+    try:
+        I = IrqSubmit(channel=channel, host=host, submit_to=submit_to);
+        while True:
+            pass
+    except KeyboardInterrupt:
+        pass
+    I.stop();
+
+    print "Exiting " + __name__
+
 ##########################################################################################
 if __name__ == "__main__":
-    I = IrqSubmit()
+    StartIqrSubmit()
