@@ -98,9 +98,6 @@ class IrqSubmit(threading.Thread):
             self.Log.error(E.message)
             self.redis.publish('error', E.message)
 
-
-
-
 @click.command()
 @click.option('--channel', default='irq')
 @click.option('--host', default=get_host_ip())

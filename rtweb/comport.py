@@ -26,6 +26,12 @@ from Queue import Queue
 from datetime import datetime
 from logbook import Logger
 
+# MY MODULES
+from message import Message
+from common import get_host_ip
+
+##########################################################################################
+# Global definitions
 PARITY_NONE, PARITY_EVEN, PARITY_ODD = 'N', 'E', 'O'
 STOPBITS_ONE, STOPBITS_TWO = (1, 2)
 FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS = (5,6,7,8)
@@ -82,8 +88,7 @@ class RedisSub(Thread):
         self.Log.debug('end of run()')
 
 ##########################################################################################
-class ComPort(Thread):    
-    read_q         = Queue()
+class ComPort(Thread):
     re_data        = re.compile(r'(?:<)(?P<cmd>\d+)(?:>)(.*)(?:<\/)(?P=cmd)(?:>)', re.DOTALL)
     redis_send_key = 'ComPort-send'
     redis_read_key = 'ComPort-read'
@@ -113,9 +118,14 @@ class ComPort(Thread):
 
         self.redis = redis.Redis(host=host)
 
-        # Register the new instance with the redis exchange
-        if not self.redis.sismember(EXCHANGE,self.serial.port):
-            result = self.redis.sadd(EXCHANGE,self.serial.port)
+        # TODO add checking for redis presence and connection
+        if self.redis.ping():
+            # Register the new instance with the redis exchange
+            self.signature = "{0:s}:{1:s}".format(get_host_ip(), self.serial.port)
+            if not self.redis.sismember(EXCHANGE,self.signature):
+                self.redis.sadd(EXCHANGE,self.signature)
+        else:
+            pass
 
         self.log.debug('ComPort(is_alive=%d, serial_port_open=%d, redis_host=%s)' % (self.is_alive(), not self.serial.closed, host))
 
@@ -222,7 +232,7 @@ class ComPort(Thread):
     
     def query(self,cmd, **kwargs):
         """
-        sends cmd to the controller and watis until waitfor is found in the buffer.
+        sends cmd to the controller and waits until waitfor is found in the buffer.
         """
         
         waitfor = kwargs.get('waitfor','\r\n')
@@ -254,7 +264,9 @@ class ComPort(Thread):
         '''
         
         try:            
-            self.log.debug('Starting the listner thread')            
+            self.log.debug('Starting the listner thread')
+            Msg = Message(self.signature)
+
             while(self.running.isSet()):
                 bytes_in_waiting = self.serial.inWaiting()                
                 
@@ -263,24 +275,25 @@ class ComPort(Thread):
                     self.buffer = self.buffer + new_data
                     #self.log.debug('found %d bytes inWaiting' % bytes_in_waiting)
 
-                crlf_index = self.buffer.find('\r\n')                
+                crlf_index = self.buffer.find('\r\n')
+
                 if crlf_index > -1:
                     # self.log.debug('read line: ' + line)
-                    timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
                     line = self.buffer[0:crlf_index]
                     temp = self.re_data.findall(line)
                                        
                     if len(temp):
+                        timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
                         try:
                             final_data = [timestamp, sjson.loads(temp[0][0]), sjson.loads(temp[0][1])]
-                            self.redis.publish('irq',sjson.dumps(final_data))
                         except Exception as E:
-                            error_msg = {'source' : 'ComPort', 'function' : 'def run() - inner', 'error' : E.message}
-                            self.redis.publish('error',sjson.dumps(error_msg))
                             final_data = [timestamp, -1, line]
+                            error_msg = {'from': self.signature, 'source' : 'ComPort', 'function' : 'def run() - inner', 'error' : E.message}
+                            Msg.data = error_msg
+                            self.redis.publish('error',error_msg)
 
-                        #self.read_q.put(final_data)
-                        self.redis.publish(self.redis_pub_channel, sjson.dumps({'port' : self.serial.port, 'id':'debug_console','data':final_data}))
+                        Msg.data = final_data
+                        self.redis.publish(self.redis_pub_channel, Msg.as_jsno())
                         self.redis.set(self.redis_read_key,line)
 
                     self.buffer = self.buffer[crlf_index+2:]
