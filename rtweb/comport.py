@@ -46,8 +46,9 @@ class RedisSub(Thread):
     def __init__(self, interface, channel='cmd', host='127.0.0.1'):
         Thread.__init__(self)
         self.interface = interface
+        self.signature = "{0:s}:{1:s}".format(get_host_ip(), self.interface.serial.port)
         self.redis     = redis.Redis(host=host)
-        self.channel   = interface.serial.port+"-cmd"
+        self.channel   = self.signature+"-cmd"
         self.pubsub    = self.redis.pubsub()
         self.Log       = Logger('RedisSub')
         self.Log.debug('__init__(channel=%s)' % self.channel)
@@ -112,9 +113,7 @@ class ComPort(Thread):
         self.serial = serial.Serial(port, baudrate, bytesize, parity, stopbits, packet_timeout, xonxoff, rtscts, writeTimeout, dsrdtr)
         self.log = Logger('ComPort-%s' % self.serial.port)
 
-        self.running = Event()
-        self.buffer  = ''
-        self.start_thread()
+
 
         self.redis = redis.Redis(host=host)
 
@@ -126,6 +125,10 @@ class ComPort(Thread):
                 self.redis.sadd(EXCHANGE,self.signature)
         else:
             pass
+
+        self.running = Event()
+        self.buffer  = ''
+        self.start_thread()
 
         self.log.debug('ComPort(is_alive=%d, serial_port_open=%d, redis_host=%s)' % (self.is_alive(), not self.serial.closed, host))
 

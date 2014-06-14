@@ -35,11 +35,11 @@ function show_server_msg(message, show) {
 	}
 }
 
-function console_response_msg(message, show) {	
+function console_response_msg(message, show) {
 	if(show){
 		dbg(message,true);
-		chan = $("#select-chan").val();
-		$("#json_res").html($("#json_res").text() + chan + ": " + "cmd [" + message[1] + "]: " + message[2].data + '\n');
+		chan = message['FROM'];		
+		$("#json_res").html($("#json_res").text() + chan + "> " + "cmd [" + message['DATA'][1] + "]: " + message['DATA'][2].data + '\n');
 		var psconsole = $('#json_res');
 		psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
 	}
@@ -273,7 +273,8 @@ function server_message_handler(data){
 		return;
 
 	}
-	console.log(JsonData)
+	//console.log(JsonData)
+	console_response_msg(JsonData, true);
 	
 	if (JsonData.hasOwnProperty('id')) {		
 		switch(JsonData.id)

@@ -93,7 +93,7 @@ class MessageHandler(tornado.websocket.WebSocketHandler):
 
 application = tornado.web.Application([    
     (r'/', MainHandler),
-    (r'/cmd', CmdHandler),
+    (r'/cmd/', CmdHandler),
     (r'/msg', NewMessageHandler),
     (r'/websocket', MessageHandler),
     ],
