@@ -3,14 +3,16 @@
 Simple module for communicating with ComPort firmware written for AVR328p.
 
 Usage:
-  hardware.py test [--dev=DEV]
-  hardware.py [--dev=DEV | --test]
+  hardware.py test [--dev=DEV | --test | --submit_to=SUBMIT_TO | --redishost=REDISHOST]
+  hardware.py run [--dev=DEV | --test | --submit_to=SUBMIT_TO | --redishost=REDISHOST]
   hardware.py (-h | --help)
 
 Options:
   -h, --help
-  --dev=DEV              [default: /dev/ttyUSB0]  
-  --submit_to=SUBMIT_TO  [default: 192.168.1.133]
+  --dev=DEV              [default: /dev/ttyUSB0]
+  --run=RUN              [default: True]
+  --submit_to=SUBMIT_TO  [default: 192.168.1.10]
+  --redishost=REDISHOST  [default: 192.168.1.10]
 
 """
 
@@ -25,6 +27,8 @@ from threading import Thread,Event
 from Queue import Queue
 from datetime import datetime
 from logbook import Logger
+from docopt import docopt
+
 
 # MY MODULES
 from message import Message
@@ -311,11 +315,20 @@ class ComPort(Thread):
 ############################################################################################
 
 if __name__ == '__main__':
+    arguments = docopt(__doc__, version='Naval Fate 2.0')
+    print("===============================================")
+    print(arguments)
+
+    dev = arguments['--dev']
+
+    print("===============================================")
+    print(dev)
+
+
+    test_json = arguments['--test'];
+    run       = arguments['--run'];
     
-    test_json = 0;
-    run       = 1;
-    
-    C = ComPort('/dev/ttyUSB0')
+    C = ComPort('/dev/ttyUSB1')
     C.log.level = logbook.DEBUG
     
     if test_json:
@@ -335,8 +348,8 @@ if __name__ == '__main__':
                 pass
         except KeyboardInterrupt:
             pass
+        R.stop()
 
-    R.stop()
     C.close()
 
     print "All done"

@@ -165,6 +165,9 @@ int main(void)
 	// GENERIC COMMANDS
 	cmdlineAddCommand("help", HelpFunction);
 	cmdlineAddCommand("idn",  GetVersion);
+	cmdlineAddCommand("setsn",SetDevSNs);
+	cmdlineAddCommand("getsn",GetDevSNs);
+
 	cmdlineAddCommand("test", test);
 	cmdlineAddCommand("poke", Poke);
 	cmdlineAddCommand("peek", Peek);
@@ -306,6 +309,87 @@ void GetPortD(void)
 
 	}
 }
+////////////////////////////////////////////////////////////////
+//Saving serial numbers
+void SetDevSNs(void)
+{
+	uint8_t *port  = cmdlineGetArgStr(1);
+	uint8_t devNum = (uint8_t) cmdlineGetArgInt(2);
+	uint8_t *label = cmdlineGetArgStr(3);
+	Label_t Label;
+	if (port[0] == 'a')
+	{
+		if((devNum >=0) && (devNum < NUM_OF_ADCS))
+		{
+			strcpy(Label.label,label);
+			eeprom_write_block(&Label,&eep_adc_sn[devNum],sizeof(Label_t));
+		}
+		else
+			rprintfProgStrM("Invalid device number");
+
+	}
+	else if (port[0] == 'b')
+	{
+		if((devNum >=0) && (devNum < 8))
+		{
+			strcpy(Label.label,label);
+			eeprom_write_block(&Label,&eep_portb_sn[devNum],sizeof(Label_t));
+		}
+		else
+			rprintfProgStrM("Invalid device number");
+	}
+	else if (port[0] == 'd')
+		{
+			if((devNum >=0) && (devNum < 8))
+			{
+				strcpy(Label.label,label);
+				eeprom_write_block(&Label,&eep_portd_sn[devNum],sizeof(Label_t));
+			}
+			else
+				rprintfProgStrM("Invalid device number");
+		}
+	else
+	{
+		rprintfProgStrM("\"Invalid syntax\: label [adc|dio] devNum label_text\"");
+	}
+	rprintfProgStrM("1");
+	cmdlinePrintPromptEnd();
+
+}
+void GetDevSNs(void)
+{
+	uint8_t  i;
+	Label_t Label;
+
+	rprintfProgStrM("{\"adc\": [");
+	for(i=0;i<8;i++)
+	{
+		eeprom_read_block(&Label,&eep_adc_sn[i],sizeof(Label_t));
+		//if (strlen(Label.label) > 0)
+		{
+			rprintf("[%d,\"",i);
+			rprintfStr(Label.label);
+			rprintf("\"]");
+		}
+		if (i != 7)
+			rprintf(",");
+	}
+	rprintfProgStrM("], \"portd\": [");
+	for(i=0;i<8;i++)
+	{
+		eeprom_read_block(&Label,&eep_portd_sn[i],sizeof(Label_t));
+		//if (strlen(Label.label) > 0)
+		{
+			rprintf("[%d,\"",i);
+			rprintfStr(Label.label);
+			rprintf("\"]");
+		}
+		if (i != 7)
+			rprintf(",");
+	}
+	rprintfProgStrM("]}");
+	cmdlinePrintPromptEnd();
+}
 
 ////////////////////////////////////////////////////////////////
 //Testing and utility functions
@@ -408,6 +492,7 @@ void GetA2D(void)
 {
 	uint8_t skip_prompt = (uint8_t) cmdlineGetArgInt(1);
 	uint8_t i;
+	Label_t Label;
 
 	// configure a2d port (PORTA) as input
 	// so we can receive analog signals
@@ -434,7 +519,10 @@ void GetA2D(void)
 	rprintfProgStrM("[");
 	for (i = 0; i <NUM_OF_ADCS; i++)
 	{
-		rprintf("%d", a2dConvert10bit(i));
+		rprintfProgStrM("[\"");
+		eeprom_read_block(&Label,&eep_adc_sn[i],sizeof(Label_t));
+		rprintfStr(Label.label);
+		rprintf("\",%d]", a2dConvert10bit(i));
 		if (i !=(NUM_OF_ADCS-1))
 			rprintfProgStrM(",");
 
