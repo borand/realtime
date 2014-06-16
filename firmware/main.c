@@ -316,6 +316,7 @@ void SetDevSNs(void)
 	uint8_t *port  = cmdlineGetArgStr(1);
 	uint8_t devNum = (uint8_t) cmdlineGetArgInt(2);
 	uint8_t *label = cmdlineGetArgStr(3);
+	uint8_t status = 0;
 	Label_t Label;
 	if (port[0] == 'a')
 	{
@@ -323,6 +324,7 @@ void SetDevSNs(void)
 		{
 			strcpy(Label.label,label);
 			eeprom_write_block(&Label,&eep_adc_sn[devNum],sizeof(Label_t));
+			rprintfProgStrM("\"OK\"");
 		}
 		else
 			rprintfProgStrM("Invalid device number");
@@ -330,29 +332,44 @@ void SetDevSNs(void)
 	}
 	else if (port[0] == 'b')
 	{
-		if((devNum >=0) && (devNum < 8))
+		if((devNum >=0) && (devNum < NUM_OF_DIO_B))
 		{
 			strcpy(Label.label,label);
 			eeprom_write_block(&Label,&eep_portb_sn[devNum],sizeof(Label_t));
+			rprintfProgStrM("\"OK\"");
 		}
 		else
-			rprintfProgStrM("Invalid device number");
+			rprintfProgStrM("\"ERROR - Invalid device number\"");
 	}
 	else if (port[0] == 'd')
 		{
-			if((devNum >=0) && (devNum < 8))
+			if((devNum >=0) && (devNum < NUM_OF_DIO_D))
 			{
 				strcpy(Label.label,label);
 				eeprom_write_block(&Label,&eep_portd_sn[devNum],sizeof(Label_t));
+				rprintfProgStrM("\"OK\"");
 			}
 			else
-				rprintfProgStrM("Invalid device number");
+				rprintfProgStrM("\"ERROR - Invalid device number\"");
+		}
+	else if (port[0] == 'l') // assign location
+		{
+		
+			strcpy(Label.label,label);
+			eeprom_write_block(&Label,&eep_dev_location[0],sizeof(Label_t));
+			rprintfProgStrM("\"OK\"");
+		}
+	else if (port[0] == 's') // asign serial number
+		{
+		
+			strcpy(Label.label,label);
+			eeprom_write_block(&Label,&eep_dev_sn[0],sizeof(Label_t));
+			rprintfProgStrM("\"OK\"");
 		}
 	else
 	{
-		rprintfProgStrM("\"Invalid syntax\: label [adc|dio] devNum label_text\"");
-	}
-	rprintfProgStrM("1");
+		rprintfProgStrM("\"ERROR - Invalid syntax label [a|b|d|l|s] devNum label_text\"");
+	}	
 	cmdlinePrintPromptEnd();
 
 }
@@ -361,33 +378,44 @@ void GetDevSNs(void)
 	uint8_t  i;
 	Label_t Label;
 
-	rprintfProgStrM("{\"adc\": [");
-	for(i=0;i<8;i++)
+	rprintfProgStrM("{\"SN\": \"");
+	eeprom_read_block(&Label,&eep_dev_sn[0],sizeof(Label_t));
+	rprintfStr(Label.label);
+	rprintfProgStrM("\", \"location\": \"");
+	eeprom_read_block(&Label,&eep_dev_location[0],sizeof(Label_t));
+	
+	rprintfProgStrM(",\"ADC\": [");
+	for(i=0;i<NUM_OF_ADCS;i++)
 	{
 		eeprom_read_block(&Label,&eep_adc_sn[i],sizeof(Label_t));
-		//if (strlen(Label.label) > 0)
-		{
-			rprintf("[%d,\"",i);
-			rprintfStr(Label.label);
-			rprintf("\"]");
-		}
-		if (i != 7)
-			rprintf(",");
+		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");
+		if (i != NUM_OF_ADCS-1) rprintf(",");
 	}
-	rprintfProgStrM("], \"portd\": [");
-	for(i=0;i<8;i++)
+	
+	rprintfProgStrM("], \"PORTB\": [");
+	for(i=0;i<NUM_OF_DIO_B;i++)
+	{
+		eeprom_read_block(&Label,&eep_portd_sn[i],sizeof(Label_t));		
+		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
+		if (i != NUM_OF_DIO_B-1) rprintf(",");
+	}
+	
+	rprintfProgStrM("], \"PORTD\": [");
+	for(i=0;i<NUM_OF_DIO_D;i++)
 	{
 		eeprom_read_block(&Label,&eep_portd_sn[i],sizeof(Label_t));
-		//if (strlen(Label.label) > 0)
-		{
-			rprintf("[%d,\"",i);
-			rprintfStr(Label.label);
-			rprintf("\"]");
-		}
-		if (i != 7)
-			rprintf(",");
+		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
+		if (i != NUM_OF_DIO_D-1) rprintf(",");
 	}
-	rprintfProgStrM("]}");
+	rprintfProgStrM("], \"IRQ\": [");
+	for(i=0;i<NUM_OF_IRQ;i++)
+	{
+		eeprom_read_block(&Label,&eep_irq_sn[i],sizeof(Label_t));
+		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
+		if (i != NUM_OF_IRQ-1) rprintf(",");
+	}
+	rprintfProgStrM("]");
+	rprintfProgStrM("}");
 	cmdlinePrintPromptEnd();
 }
 
@@ -427,10 +455,6 @@ void Peek(void) {
 	address = cmdlineGetArgHex(1);
 	value = _SFR_MEM8(address);
 	rprintf("[%d,\"0x%x\"]", value, value);
-	//rprintfNum(10,4,FALSE,' ',value);rprintf("\t");
-	//rprintfNum(16,4,FALSE,' ',value);rprintf("\t");
-	//rprintfNum(2,8,FALSE,'0',value);rprintf("\t");
-	//rprintf("\n");
 	cmdlinePrintPromptEnd();
 }
 void Dump(void) {
@@ -535,7 +559,7 @@ void GetA2D(void)
 void GetDIO(void)
 {
 	uint8_t skip_prompt = (uint8_t) cmdlineGetArgInt(1);
-	rprintf("[%d, %d]",PINB,PIND);
+	rprintf("{ \"PORTB\" : %d, \"PORTB\" : %d}",PINB,PIND);
 	if (!skip_prompt)
 		cmdlinePrintPromptEnd();
 

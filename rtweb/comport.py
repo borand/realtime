@@ -27,7 +27,6 @@ from threading import Thread,Event
 from Queue import Queue
 from datetime import datetime
 from logbook import Logger
-from docopt import docopt
 
 
 # MY MODULES
@@ -116,9 +115,6 @@ class ComPort(Thread):
 
         self.serial = serial.Serial(port, baudrate, bytesize, parity, stopbits, packet_timeout, xonxoff, rtscts, writeTimeout, dsrdtr)
         self.log = Logger('ComPort-%s' % self.serial.port)
-
-
-
         self.redis = redis.Redis(host=host)
 
         # TODO add checking for redis presence and connection
@@ -196,7 +192,7 @@ class ComPort(Thread):
         - attempt to read all data availiable in the buffer
         - pack the serial data and the serial errors
         '''
-       
+       #TODO - check buffer for cmd[num] then wait until closing tags are found
         serial_data = ''
         if self.is_alive():
             try:
@@ -291,15 +287,19 @@ class ComPort(Thread):
                                        
                     if len(temp):
                         timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
+                        final_data['timestamp'] = timestamp
+                        final_data['raw']       = line
                         try:
-                            final_data = [timestamp, sjson.loads(temp[0][0]), sjson.loads(temp[0][1])]
+                            final_data.update({'cmd_number' : sjson.loads(temp[0][0])})
+                            final_data.update(sjson.loads(temp[0][1]))
+
                         except Exception as E:
-                            final_data = [timestamp, -1, line]
-                            error_msg = {'from': self.signature, 'source' : 'ComPort', 'function' : 'def run() - inner', 'error' : E.message}
-                            Msg.data = error_msg
+                            final_data.update({'cmd_number' : -1})
+                            error_msg = {'timestamp' : timestamp, 'from': self.signature, 'source' : 'ComPort', 'function' : 'def run() - inner', 'error' : E.message}
+                            Msg.msg = error_msg
                             self.redis.publish('error',error_msg)
 
-                        Msg.data = final_data
+                        Msg.msg = final_data
                         self.redis.publish(self.redis_pub_channel, Msg.as_jsno())
                         self.redis.set(self.redis_read_key,line)
 

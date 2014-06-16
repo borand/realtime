@@ -1,3 +1,15 @@
+"""rtweb.py -
+
+Main webserver for rtweb
+
+Usage:
+  rtweb.py [--port=PORT]
+
+Options:
+  --port=PORT  [default: 8888]
+
+"""
+
 from __future__ import print_function
 import tornado.httpserver
 import tornado.web
@@ -12,15 +24,14 @@ import sh
 import re
 import logbook
 
+from docopt import docopt
 from common import get_host_ip
 
 from redis import Redis
 from comport import EXCHANGE
 
 from tornado.options import define, options
-
-
-define("port", default=8888, help="run on the given port", type=int)
+#define("port", default=8888, help="run on the given port", type=int)
 
 ##########################################################################################
 #
@@ -103,8 +114,13 @@ application = tornado.web.Application([
     )
 
 if __name__ == '__main__':
-    tornado.options.parse_command_line()
+    print("=== RTWEB ===")
+    arguments = docopt(__doc__, version='Naval Fate 2.0')
+    print(arguments)
+    port = int(arguments['--port'])
+
+    #tornado.options.parse_command_line()
     http_server = tornado.httpserver.HTTPServer(application)
-    http_server.listen(8888)
-    print('Demo is runing at %s:8888\nQuit the demo with CONTROL-C' % get_host_ip())
+    http_server.listen(port)
+    print('RTWEB is running at %s:%d\nQuit the demo with CONTROL-C' % (get_host_ip(), port))
     tornado.ioloop.IOLoop.instance().start()
