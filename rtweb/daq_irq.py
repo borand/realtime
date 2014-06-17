@@ -111,7 +111,7 @@ def StartIqrSubmit(channel, host, submit_to):
             pass
     except KeyboardInterrupt:
         pass
-    I.stop();
+    I.stop()
 
     print "Exiting " + __name__
 

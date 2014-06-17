@@ -10,10 +10,6 @@ import psutil
 #
 #
 
-# nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/rtweb.py > /dev/null &
-# nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/comport.py > /dev/null &
-# nohup ~/venv/realtime/bin/rqworker > /dev/null &
-
 def get_host_ip():
     """
     parses ifconfig system command and returns host ip

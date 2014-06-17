@@ -27,7 +27,7 @@ from threading import Thread,Event
 from Queue import Queue
 from datetime import datetime
 from logbook import Logger
-
+from docopt import docopt
 
 # MY MODULES
 from message import Message
@@ -192,10 +192,7 @@ class ComPort(Thread):
     
     def read(self, waitfor=''):
         '''
-        read data in the serial port buffer
-        - check if the serial port is open 
-        - attempt to read all data availiable in the buffer
-        - pack the serial data and the serial errors
+        reads the data by waiting until new comport is found in the buffer and result can be read from the redis server
         '''
 
         serial_data = ''
@@ -211,34 +208,6 @@ class ComPort(Thread):
         self.redis.delete(self.redis_read_key)
         return [done, serial_data]
 
-        # if self.open():
-        #     try:
-        #         to = time.clock()
-        #         done = 0
-        #         while time.clock() - to < TIMEOUT and not done:
-        #             if self.is_alive():
-        #                 tmp = self.redis.get(self.redis_read_key)
-        #                 if not None:
-        #                     serial_data += tmp[1]
-        #             else:
-        #                 n = self.serial.inWaiting()
-        #                 if n > 0:
-        #                     serial_data += self.serial.read(n)
-        #             if waitfor in serial_data:
-        #                 done = 1
-        #         serial_error = 0
-        #     except Exception as E:
-        #         error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : E.message}
-        #         self.redis.publish('error',sjson.dumps(error_msg))
-        #         serial_error = 1
-        # else:
-        #     error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : 'serial port appears to be closed'}
-        #     self.redis.publish('error',sjson.dumps(error_msg))
-        #     serial_error = 2
-        #
-        # self.redis.set(self.redis_read_key,serial_data)
-        # return (serial_error, serial_data)
-    
     def query(self,cmd, **kwargs):
         """
         sends cmd to the controller and waits until waitfor is found in the buffer.
@@ -340,10 +309,10 @@ if __name__ == '__main__':
     print(dev)
 
 
-    test_json = arguments['--test'];
-    run       = arguments['--run'];
+    test_json = arguments['--test']
+    run_main  = arguments['run']
     
-    C = ComPort('/dev/ttyUSB1')
+    C = ComPort(dev)
     C.log.level = logbook.DEBUG
     
     if test_json:
@@ -356,7 +325,7 @@ if __name__ == '__main__':
             except Exception as E:
                 print E    
     
-    if run:
+    if run_main:
         R = RedisSub(C)
         try:
             while True:
