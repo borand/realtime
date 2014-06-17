@@ -383,8 +383,9 @@ void GetDevSNs(void)
 	rprintfStr(Label.label);
 	rprintfProgStrM("\", \"location\": \"");
 	eeprom_read_block(&Label,&eep_dev_location[0],sizeof(Label_t));
+	rprintfStr(Label.label);
 	
-	rprintfProgStrM(",\"ADC\": [");
+	rprintfProgStrM("\",\"ADC\": [");
 	for(i=0;i<NUM_OF_ADCS;i++)
 	{
 		eeprom_read_block(&Label,&eep_adc_sn[i],sizeof(Label_t));

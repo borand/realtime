@@ -45,7 +45,7 @@ def submit(data_set, timestamp='', submit_to='0.0.0.0', port=8000, threshold=0, 
     try:
         ret = []
         for data in data_set:
-            serial_number = data[1]
+            serial_number = data[0]
             datavalue     = data[-1]
             
             if isinstance(datavalue, str):

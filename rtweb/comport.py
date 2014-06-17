@@ -94,8 +94,8 @@ class RedisSub(Thread):
 ##########################################################################################
 class ComPort(Thread):
     re_data        = re.compile(r'(?:<)(?P<cmd>\d+)(?:>)(.*)(?:<\/)(?P=cmd)(?:>)', re.DOTALL)
-    redis_send_key = 'ComPort-send'
-    redis_read_key = 'ComPort-read'
+    re_next_cmd    = re.compile("(?:<)(\d+)(?:>\{\"cmd\":\")")
+
     redis_pub_channel = 'rtweb'
     
     def __init__(self,
@@ -109,18 +109,21 @@ class ComPort(Thread):
                  rtscts=0,              
                  writeTimeout=None,     
                  dsrdtr=None,
-                 host='127.0.0.1'):
+                 host='127.0.0.1',
+                 run=True):
         
         Thread.__init__(self)
 
         self.serial = serial.Serial(port, baudrate, bytesize, parity, stopbits, packet_timeout, xonxoff, rtscts, writeTimeout, dsrdtr)
-        self.log = Logger('ComPort-%s' % self.serial.port)
+        self.signature = "{0:s}:{1:s}".format(get_host_ip(), self.serial.port)
+        self.redis_send_key = self.signature+'-send'
+        self.redis_read_key = self.signature+'-read'
+        self.log = Logger(self.signature)
         self.redis = redis.Redis(host=host)
 
         # TODO add checking for redis presence and connection
         if self.redis.ping():
             # Register the new instance with the redis exchange
-            self.signature = "{0:s}:{1:s}".format(get_host_ip(), self.serial.port)
             if not self.redis.sismember(EXCHANGE,self.signature):
                 self.redis.sadd(EXCHANGE,self.signature)
         else:
@@ -128,13 +131,15 @@ class ComPort(Thread):
 
         self.running = Event()
         self.buffer  = ''
-        self.start_thread()
+        if run:
+            self.start_thread()
 
         self.log.debug('ComPort(is_alive=%d, serial_port_open=%d, redis_host=%s)' % (self.is_alive(), not self.serial.closed, host))
 
     def __del__(self):
         self.log.debug("About to delete the object")
         self.close()
+        time.sleep(1)
         self.log.debug("Closing serial interface")
         self.serial.close()
         if self.serial.closed:
@@ -192,66 +197,74 @@ class ComPort(Thread):
         - attempt to read all data availiable in the buffer
         - pack the serial data and the serial errors
         '''
-       #TODO - check buffer for cmd[num] then wait until closing tags are found
-        serial_data = ''
-        if self.is_alive():
-            try:
-                read_str = self.redis.get(self.redis_read_key)
-                if not None:
-                    self.redis.delete(self.redis_read_key)
-                    return read_str
-                else:
-                    return ''
-            except:
-                return ''
 
-        if self.open():
-            try:
-                to = time.clock()                
-                done = 0
-                while time.clock() - to < TIMEOUT and not done:
-                    if self.is_alive():
-                        tmp = self.redis.get(self.redis_read_key)
-                        if not None:
-                            serial_data += tmp[1]
-                    else:                        
-                        n = self.serial.inWaiting()
-                        if n > 0:
-                            serial_data += self.serial.read(n)
-                    if waitfor in serial_data:
-                        done = 1
-                serial_error = 0
-            except Exception as E:
-                error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : E.message}
-                self.redis.publish('error',sjson.dumps(error_msg))
-                serial_error = 1
-        else:
-            error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : 'serial port appears to be closed'}
-            self.redis.publish('error',sjson.dumps(error_msg))
-            serial_error = 2
-        
-        self.redis.set(self.redis_read_key,serial_data)
-        return (serial_error, serial_data)
+        serial_data = ''
+        done = False
+        to = time.clock()
+        while time.clock() - to < TIMEOUT and not done:
+            serial_data = self.redis.get(self.redis_read_key)
+            done = waitfor in self.buffer and isinstance(serial_data,str)
+
+        if not done:
+            self.log.debug("read() did not find waitfor {:s} in self.buffer".format(waitfor))
+
+        self.redis.delete(self.redis_read_key)
+        return [done, serial_data]
+
+        # if self.open():
+        #     try:
+        #         to = time.clock()
+        #         done = 0
+        #         while time.clock() - to < TIMEOUT and not done:
+        #             if self.is_alive():
+        #                 tmp = self.redis.get(self.redis_read_key)
+        #                 if not None:
+        #                     serial_data += tmp[1]
+        #             else:
+        #                 n = self.serial.inWaiting()
+        #                 if n > 0:
+        #                     serial_data += self.serial.read(n)
+        #             if waitfor in serial_data:
+        #                 done = 1
+        #         serial_error = 0
+        #     except Exception as E:
+        #         error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : E.message}
+        #         self.redis.publish('error',sjson.dumps(error_msg))
+        #         serial_error = 1
+        # else:
+        #     error_msg = {'source' : 'ComPort', 'function' : 'def read()', 'error' : 'serial port appears to be closed'}
+        #     self.redis.publish('error',sjson.dumps(error_msg))
+        #     serial_error = 2
+        #
+        # self.redis.set(self.redis_read_key,serial_data)
+        # return (serial_error, serial_data)
     
     def query(self,cmd, **kwargs):
         """
         sends cmd to the controller and waits until waitfor is found in the buffer.
         """
         
-        waitfor = kwargs.get('waitfor','\r\n')
+        waitfor = kwargs.get('waitfor','')
         tag     = kwargs.get('tag','')
-        json    = kwargs.get('json',0)
-        delay   = kwargs.get('delay',0.05)
+        json    = kwargs.get('json',1)
+        delay   = kwargs.get('delay',0.01)
+
+        if len(waitfor) < 1:
+            next_cmd_num = self.re_next_cmd.findall(self.buffer)
+            if len(next_cmd_num) > 0:
+                waitfor = '<{:d}>{:s}"cmd":"'.format(int(next_cmd_num[0])+1,"{")
 
         self.log.debug('query(cmd=%s, waitfor=%s, tag=%s,json=%d, delay=%d):' % \
             (cmd, waitfor, tag, json, delay))
 
-        query_data = ''
-
         self.send(cmd)
         time.sleep(delay)        
-        out = self.read(waitfor)
-        query_data = sjson.loads(out)
+        query_data = self.read(waitfor=waitfor)
+        if query_data[0]:
+            try:
+                query_data[1] = sjson.loads(query_data[1])
+            except:
+                query_data[0] = False
         return query_data
 
     def close(self):
