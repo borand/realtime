@@ -241,16 +241,17 @@ class ComPort(Thread):
         waitfor = kwargs.get('waitfor','\r\n')
         tag     = kwargs.get('tag','')
         json    = kwargs.get('json',0)
-        delay   = kwargs.get('delay',0)
+        delay   = kwargs.get('delay',0.05)
 
         self.log.debug('query(cmd=%s, waitfor=%s, tag=%s,json=%d, delay=%d):' % \
             (cmd, waitfor, tag, json, delay))
 
         query_data = ''
+
         self.send(cmd)
         time.sleep(delay)        
         out = self.read(waitfor)
-        query_data = out      
+        query_data = sjson.loads(out)
         return query_data
 
     def close(self):
@@ -286,6 +287,7 @@ class ComPort(Thread):
                     temp = self.re_data.findall(line)
                                        
                     if len(temp):
+                        final_data = dict()
                         timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
                         final_data['timestamp'] = timestamp
                         final_data['raw']       = line
@@ -301,7 +303,7 @@ class ComPort(Thread):
 
                         Msg.msg = final_data
                         self.redis.publish(self.redis_pub_channel, Msg.as_jsno())
-                        self.redis.set(self.redis_read_key,line)
+                        self.redis.set(self.redis_read_key,Msg.as_jsno())
 
                     self.buffer = self.buffer[crlf_index+2:]
 
