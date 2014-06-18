@@ -12,7 +12,7 @@
 #define NUM_OF_DIO_D 4
 #define NUM_OF_DIO_B 4
 #define NUM_OF_IRQ   4
-
+#define MAX_NUMBER_OF_1WIRE_DEVICES 40
 uint32_t EEMEM count_cWh_eeprom = 0;
 typedef struct {
 	uint8_t label[20];
@@ -68,5 +68,17 @@ void OneWireReadPage(void);
 void OneWirerintScratchPad(void);
 void OneWireWritePage(void);
 void ChangeTmermPin(void);
+
+void PrintLabel(Label_t &eep_label);
+void json_sep(uint8_t i, uint8_t num_of_elements);
+void json_end_bracket(void);
+void json_open_bracket(void);
+void json_comma(void);
+void PrintCount_cWh(void);
+
+void Interrupt0(void);
+void Interrupt1(void);
+void Timer1OvfFunc(void);
+void Timer0Func(void);
 
 #endif /* MAIN_H_ */
