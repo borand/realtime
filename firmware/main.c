@@ -247,8 +247,8 @@ void HelpFunction(void)
 {
 	rprintfProgStrM("Instant commands:\n");
 	rprintfProgStrM("D                : get port D value\n");
-	rprintfProgStrM("C                : force interrupt 0\n");
-	rprintfProgStrM("I                : clear screen \n");
+	rprintfProgStrM("C                : clear screen\n");
+	rprintfProgStrM("I                : force interrupt 0 \n");
 	rprintfProgStrM("Z                : reset command number to zero\n");
 
 	rprintfProgStrM("\nCommands:\n");
@@ -352,6 +352,17 @@ void SetDevSNs(void)
 			else
 				rprintfProgStrM("\"ERROR - Invalid device number\"");
 		}
+	else if (port[0] == 'i')
+		{
+			if((devNum >=0) && (devNum < NUM_OF_IRQ))
+			{
+				strcpy(Label.label,label);
+				eeprom_write_block(&Label,&eep_irq_sn[devNum],sizeof(Label_t));
+				rprintfProgStrM("\"OK\"");
+			}
+			else
+				rprintfProgStrM("\"ERROR - Invalid device number\"");
+		}
 	else if (port[0] == 'l') // assign location
 		{
 		
@@ -396,7 +407,7 @@ void GetDevSNs(void)
 	rprintfProgStrM("], \"PORTB\": [");
 	for(i=0;i<NUM_OF_DIO_B;i++)
 	{
-		eeprom_read_block(&Label,&eep_portd_sn[i],sizeof(Label_t));		
+		eeprom_read_block(&Label,&eep_portb_sn[i],sizeof(Label_t));
 		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
 		if (i != NUM_OF_DIO_B-1) rprintf(",");
 	}
