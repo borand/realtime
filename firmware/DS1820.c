@@ -193,14 +193,14 @@ void therm_print_devID()
 	rprintf("therm_print_devID();");
 #endif
 	uint8_t i;
-	rprintfStr("[");
+	rprintfStr("\"");
 	for (i = 0; i < 8; i++)
 	{
 		rprintf("%d",DS.devID[i]);
 		if (i==7)
-			rprintf("]");
+			rprintf("\"");
 		else
-			rprintf(",");
+			rprintf(".");
 	}
 }
 

@@ -24,37 +24,6 @@
 
 #include "main.h"
 
-void Interrupt0(void)
-{
-	rprintfProgStrM("irq_0\",\"data\":[");
-	rprintfNum(10, 10, 0, ' ', ext_interupt_count_0);
-	rprintfProgStrM(",");
-	rprintfNum(10, 10, 0, ' ', count_cWh);
-	rprintfProgStrM(",");
-	rprintfNum(10, 3, 0, ' ', timer1_ovf_count);
-	rprintfProgStrM(",");
-	rprintfNum(10, 6, 0, ' ', TCNT1);
-
-	rprintfProgStrM("]");
-	cmdlinePrintPromptEnd();
-	cmdlinePrintPrompt();
-
-	TCNT1            = 0;
-	timer1_ovf_count = 0;
-}
-void Interrupt1(void)
-{
-	rprintfProgStrM("irq_1\",\"data\":[");
-	rprintfProgStrM("]");
-	cmdlinePrintPromptEnd();
-	cmdlinePrintPrompt();
-}
-
-void Timer1OvfFunc(void)
-{
-	timer1_ovf_count++;
-	toggle(PORTB,PB1);
-}
 
 ISR(INT0_vect)
 {
@@ -64,17 +33,15 @@ ISR(INT0_vect)
 	{
 		count_cWh++;
 		count_Wh = 0;
-		eeprom_write_dword(&count_cWh_eeprom, count_cWh);
-		rprintfProgStrM("irq_cWH\",\"data\":");
-		rprintfNum(10, 10, 0, ' ', count_cWh);
-		cmdlinePrintPromptEnd();
-		cmdlinePrintPrompt();
-	}
-	sbi(PORTB,PB0);
-	Interrupt0();
-	_delay_ms(1);
-	toggle(PORTB,PB5);
-	cbi(PORTB,PB0);
+		PrintCount_cWh();
+	}	
+    TCNT1            = 0;
+	timer1_ovf_count = 0;
+    //sbi(PORTB,PB0);
+	//Interrupt0();
+	//_delay_ms(1);
+	//toggle(PORTB,PB5);
+	//cbi(PORTB,PB0);
 }
 ISR(INT1_vect)
 {
@@ -94,12 +61,11 @@ void Timer0Func(void)
 	{
 		if (stream_timer_0)
 		{
-
 			rprintfProgStrM("irq_tovf_0\",\"data\":[");
 			//GetA2D();
 			//rprintfProgStrM(", ");
 			GetDIO();
-			rprintfProgStrM("]");
+			json_end_bracket();
 			cmdlinePrintPromptEnd();
 			timer0ClearOverflowCount();
 			cmdlinePrintPrompt();
@@ -108,6 +74,51 @@ void Timer0Func(void)
 		//therm_start_measurement();
 	}
 }
+
+void Interrupt0(void)
+{
+	rprintfProgStrM("irq_0\",\"data\":[");
+	json_open_bracket();
+	PrintLabel(&eep_irq_sn[0]);
+	json_comma();
+	rprintfNum(10, 10, 0, ' ', ext_interupt_count_0);
+	json_comma();
+	rprintfNum(10, 10, 0, ' ', count_cWh);
+	json_end_bracket();
+	json_comma();
+	json_open_bracket();
+	PrintLabel(&eep_irq_sn[1]);
+	json_comma();
+	rprintfNum(10, 3, 0, ' ', timer1_ovf_count);
+	json_comma();
+	rprintfNum(10, 6, 0, ' ', TCNT1);
+	json_end_bracket();
+	json_end_bracket();
+	cmdlinePrintPromptEnd();
+	cmdlinePrintPrompt();
+}
+void Interrupt1(void)
+{
+	rprintfProgStrM("irq_1\",\"data\":[");
+	rprintfProgStrM("]");
+	cmdlinePrintPromptEnd();
+	cmdlinePrintPrompt();
+}
+
+void Timer1OvfFunc(void)
+{
+	timer1_ovf_count++;
+	toggle(PORTB,PB1);
+}
+void PrintCount_cWh(void)
+{
+    json_open_bracket();
+    PrintLabel(&count_cWh_eeprom);
+    json_comma();
+    rprintfNum(10, 10, 0, ' ', count_cWh);
+    json_end_bracket();
+}
+
 ////////////////////////////////////////////////////////////////
 // MAIN
 //
@@ -197,7 +208,9 @@ int main(void)
 }
 void CmdLineLoop(void)
 {
-	u08 c;
+	uint8_t  c;	
+	uint32_t last_ext_interupt_count_0 = ext_interupt_count_0;	
+
 	// set state to run
 	Run = TRUE;
 	// main loop
@@ -206,6 +219,9 @@ void CmdLineLoop(void)
 		// pass characters received on the uart (serial port)
 		// into the cmdline processor
 		GetPortD();
+		if (last_ext_interupt_count_0 != ext_interupt_count_0)
+			Interrupt0();
+
 		while (uartReceiveByte(&c))
 		{
 			switch (c)
@@ -276,13 +292,14 @@ void HelpFunction(void)
 }
 void GetVersion(void)
 {
-	rprintfProgStrM("\"Avr328pConsole 328P V14.04.11\"");
+	rprintfProgStrM("\"Avr328pConsole 328P V14.06.18\"");
 	cmdlinePrintPromptEnd();
 }
 
 void GetPortD(void)
 {
-	uint8_t port_d_new;
+	uint8_t i;
+    uint8_t port_d_new;
 	static uint8_t count = 0;
 
 	port_d_new = PIND >> 4;
@@ -291,15 +308,34 @@ void GetPortD(void)
 		if(count++ > 50)
 		{
 			rprintfProgStrM("irq_port_d\",\"data\":[");
+			json_open_bracket();
+			rprintfProgStrM("\"port_d_new\"");
+			json_comma();
 			rprintfNum(10,3,FALSE,' ',port_d_new);
-			rprintfProgStrM(",");
+			json_end_bracket();
+			json_comma();
+
+			json_open_bracket();
+			rprintfProgStrM("\"port_d_new\"");
+			json_comma();
 			rprintfNum(10,4,FALSE,' ',(port_d_last_val & port_d_new));
-			rprintfProgStrM("]");
-			cmdlinePrintPromptEnd();
+			json_end_bracket();
+            json_comma();
+            
+            for (i = 0; i <NUM_OF_DIO_D; i++)
+            {
+                json_open_bracket();
+                PrintLabel(&eep_portd_sn[i]);
+                json_comma();
+                rprintf("%d]", port_d_new >> i & 1);
+                json_sep(i,NUM_OF_DIO_D);
+            }
+            json_end_bracket();
+            cmdlinePrintPromptEnd();
 			cmdlinePrintPrompt();
 			port_d_last_val = port_d_new;
 			count = 0;
-		}
+        }
 
 	}
 }
@@ -310,7 +346,6 @@ void SetDevSNs(void)
 	uint8_t *port  = cmdlineGetArgStr(1);
 	uint8_t devNum = (uint8_t) cmdlineGetArgInt(2);
 	uint8_t *label = cmdlineGetArgStr(3);
-	uint8_t status = 0;
 	Label_t Label;
 	if (port[0] == 'a')
 	{
@@ -321,7 +356,7 @@ void SetDevSNs(void)
 			rprintfProgStrM("\"OK\"");
 		}
 		else
-			rprintfProgStrM("Invalid device number");
+			rprintfProgStrM("\"ERROR - Invalid device number\"");
 
 	}
 	else if (port[0] == 'b')
@@ -366,14 +401,13 @@ void SetDevSNs(void)
 		}
 	else if (port[0] == 's') // asign serial number
 		{
-		
 			strcpy(Label.label,label);
 			eeprom_write_block(&Label,&eep_dev_sn[0],sizeof(Label_t));
 			rprintfProgStrM("\"OK\"");
 		}
 	else
 	{
-		rprintfProgStrM("\"ERROR - Invalid syntax label [a|b|d|l|s] devNum label_text\"");
+		rprintfProgStrM("\"ERROR - Invalid syntax label [a|b|d|i|l|s] devNum label_text\"");
 	}	
 	cmdlinePrintPromptEnd();
 
@@ -381,58 +415,71 @@ void SetDevSNs(void)
 void GetDevSNs(void)
 {
 	uint8_t  i;
-	Label_t Label;
 
-	rprintfProgStrM("{\"SN\": \"");
-	eeprom_read_block(&Label,&eep_dev_sn[0],sizeof(Label_t));
-	rprintfStr(Label.label);
-	rprintfProgStrM("\", \"location\": \"");
-	eeprom_read_block(&Label,&eep_dev_location[0],sizeof(Label_t));
-	rprintfStr(Label.label);
+	rprintfProgStrM("{\"SN\":");
+    PrintLabel(&eep_dev_sn[0]);
+	rprintfProgStrM(",\"location\":");
+    PrintLabel(&eep_dev_location[0]);
 	
-	rprintfProgStrM("\",\"ADC\": [");
+    rprintfProgStrM(",\"ADC\":[");
 	for(i=0;i<NUM_OF_ADCS;i++)
 	{
-		eeprom_read_block(&Label,&eep_adc_sn[i],sizeof(Label_t));
-		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");
-		if (i != NUM_OF_ADCS-1) rprintf(",");
+		rprintf("[%d,",i); PrintLabel(&eep_adc_sn[i]); json_end_bracket();
+        json_sep(i, NUM_OF_ADCS);
 	}
-	
-	rprintfProgStrM("], \"PORTB\": [");
-	for(i=0;i<NUM_OF_DIO_B;i++)
-	{
-		eeprom_read_block(&Label,&eep_portb_sn[i],sizeof(Label_t));
-		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
-		if (i != NUM_OF_DIO_B-1) rprintf(",");
+	json_end_bracket();
+    
+	rprintfProgStrM(",\"PORTB\":[");
+	for(i=0;i<NUM_OF_DIO_B;i++)	{        		
+		rprintf("[%d,",i); PrintLabel(&eep_portb_sn[i]); json_end_bracket();
+        json_sep(i, NUM_OF_DIO_B);
 	}
-	
-	rprintfProgStrM("], \"PORTD\": [");
+    
+    json_end_bracket();
+	rprintfProgStrM(",\"PORTD\":[");
 	for(i=0;i<NUM_OF_DIO_D;i++)
-	{
-		eeprom_read_block(&Label,&eep_portd_sn[i],sizeof(Label_t));
-		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
-		if (i != NUM_OF_DIO_D-1) rprintf(",");
+	{        		
+		rprintf("[%d,",i); PrintLabel(&eep_portd_sn[i]); json_end_bracket();
+		json_sep(i, NUM_OF_DIO_D);        
 	}
-	rprintfProgStrM("], \"IRQ\": [");
+    
+    json_end_bracket();
+	rprintfProgStrM(",\"IRQ\":[");
 	for(i=0;i<NUM_OF_IRQ;i++)
 	{
-		eeprom_read_block(&Label,&eep_irq_sn[i],sizeof(Label_t));
-		rprintf("[%d,\"",i); rprintfStr(Label.label); rprintf("\"]");		
-		if (i != NUM_OF_IRQ-1) rprintf(",");
+		rprintf("[%d,",i); PrintLabel(&eep_irq_sn[i]); json_end_bracket();
+        json_sep(i, NUM_OF_IRQ);
 	}
-	rprintfProgStrM("]");
+	json_end_bracket();
 	rprintfProgStrM("}");
 	cmdlinePrintPromptEnd();
 }
-
-void PrintLabel(Label_t &eep_label)
+////////////////////////////////////////////////////////////////
+//JSON utility functions
+void PrintLabel(Label_t *eep_label)
 {
 	Label_t Label;
 	rprintfProgStrM("\"");
-	eeprom_read_block(&Label,&eep_label,sizeof(Label_t));
+	eeprom_read_block(&Label,eep_label,sizeof(Label_t));
 	rprintfStr(Label.label);
 	rprintfProgStrM("\"");
 	
+}
+void json_comma(void)
+{
+    rprintfProgStrM(",");
+}
+void json_sep(uint8_t i, uint8_t num_of_elements)
+{
+    if (i != num_of_elements-1) json_comma();
+}
+void json_end_bracket(void)
+{
+    rprintfProgStrM("]");
+}
+void json_open_bracket(void)
+{
+    rprintfProgStrM("[");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -517,7 +564,21 @@ void ResetCounters(void)
 void GetWh(void)
 {
 	uint8_t skip_prompt = (uint8_t) cmdlineGetArgInt(1);
-	rprintfNum(10,10,FALSE,' ',eeprom_read_dword(&count_cWh_eeprom));
+
+	//rprintfProgStrM("irq_0\",\"data\":[");
+	json_open_bracket();
+	json_open_bracket();
+	PrintLabel(&eep_irq_sn[0]);
+	json_comma();
+	rprintfNum(10, 10, 0, ' ', ext_interupt_count_0);
+	json_end_bracket();
+	json_comma();
+	json_open_bracket();
+	PrintLabel(&eep_irq_sn[1]);
+	json_comma();
+	rprintfNum(10, 10, 0, ' ', eeprom_read_dword(&count_cWh_eeprom));
+	json_end_bracket();
+	json_end_bracket();
 	if (!skip_prompt)
 		cmdlinePrintPromptEnd();
 
@@ -535,8 +596,7 @@ void GetA2D(void)
 {
 	uint8_t skip_prompt = (uint8_t) cmdlineGetArgInt(1);
 	uint8_t i;
-	Label_t Label;
-
+    
 	// configure a2d port (PORTA) as input
 	// so we can receive analog signals
 	DDRC = 0x00;
@@ -559,26 +619,25 @@ void GetA2D(void)
 
 	// use a2dConvert8bit(channel#) to get an 8bit a2d reading
 	// use a2dConvert10bit(channel#) to get a 10bit a2d reading
-	rprintfProgStrM("[");
+	json_open_bracket();
 	for (i = 0; i <NUM_OF_ADCS; i++)
 	{
-		rprintfProgStrM("[\"");
-		eeprom_read_block(&Label,&eep_adc_sn[i],sizeof(Label_t));
-		rprintfStr(Label.label);
-		rprintf("\",%d]", a2dConvert10bit(i));
-		if (i !=(NUM_OF_ADCS-1))
-			rprintfProgStrM(",");
-
+		json_open_bracket();
+        PrintLabel(&eep_adc_sn[i]);
+        json_comma();
+		rprintf("%d]", a2dConvert10bit(i));
+        json_sep(i,NUM_OF_ADCS);
 	}
-	rprintfProgStrM("]");
-	if (!skip_prompt)
+	json_end_bracket();
+	
+    if (!skip_prompt)
 		cmdlinePrintPromptEnd();
 	a2dOff();
 }
 void GetDIO(void)
 {
 	uint8_t skip_prompt = (uint8_t) cmdlineGetArgInt(1);
-	rprintf("{ \"PORTB\" : %d, \"PORTB\" : %d}",PINB,PIND);
+	rprintf("[[\"PORTB\",%d],[\"PORTB\",%d]]",PINB,PIND);
 	if (!skip_prompt)
 		cmdlinePrintPromptEnd();
 
@@ -593,7 +652,7 @@ void StreamingControl(void)
 }
 
 ////////////////////////////////////////////////////////////////
-//Thermometer functions
+// ONE WIRE DEVICES
 //
 void ChangeTmermPin(void)
 {
@@ -618,23 +677,22 @@ void GetTemperature(void)
 	rprintfProgStrM("[");
 	if (devNum == 0)
 	{
-		for (i = 1; i <= 20; i++)
-		{
-			if (therm_load_devID(i))
-				device_count++;
-		}
-		for (i = 1; i <= 20; i++)
+// 		for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
+// 		{
+// 			if (therm_load_devID(i))
+// 				device_count++;
+// 		}
+		for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
 		{
 			if (therm_load_devID(i))
 			{
 				loop_count++;
-				rprintfProgStrM("[");
-				therm_print_devID();
-				rprintfProgStrM(", ");
-				therm_read_result(t);
-				rprintfProgStrM(", ");
+				json_open_bracket();
+				therm_print_devID();json_comma();
+				therm_read_result(t);json_comma();
 				therm_print_scratchpad();
-				rprintfProgStrM("],");
+                json_end_bracket();
+                json_comma();
 			}
 		}
 	}
@@ -650,7 +708,7 @@ void GetTemperature(void)
 			therm_read_result(t);
 		}
 	}
-	rprintfProgStrM("[0,0,0]]");
+	rprintfProgStrM("[\"0\",0,0]]");
 	cmdlinePrintPromptEnd();
 }
 void GetOneWireMeasurements(void)
@@ -676,13 +734,13 @@ void OneWireLoadRom(void)
 	rprintfProgStrM("[");
 	for (i = 1; i < 20; i++)
 	{
-		rprintf("[%d, ",i);
+		rprintf("[%d,",i);
 		if (therm_load_devID(i))
 			therm_print_devID();
 		else
 			rprintfProgStrM("[]");
 
-		if (i<19)
+		if (i<MAX_NUMBER_OF_1WIRE_DEVICES-1)
 			rprintf("],");
 		else
 			rprintfProgStrM("]");
@@ -713,10 +771,10 @@ void OneWireReadPage(void)
 }
 void OneWireWritePage(void)
 {
-	//rprintfProgStrM("OneWireWritePage");
 	uint8_t  page = (uint8_t) cmdlineGetArgInt(1);
 	uint8_t  val  = (uint8_t) cmdlineGetArgInt(2);
-	write_to_page(page, val);
+	
+    write_to_page(page, val);
 	_delay_ms(1);
 	recal_memory_page(page);
 	therm_print_scratchpad();
