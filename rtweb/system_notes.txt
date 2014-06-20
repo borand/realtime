@@ -1,3 +1,4 @@
 nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/rtweb.py > /dev/null &
-nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/comport.py > /dev/null &
+nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/comport.py run > /dev/null &
+nohup ~/venv/realtime/bin/python ~/projects/realtime/rtweb/daq_irq.py > /dev/null &
 nohup ~/venv/realtime/bin/rqworker > /dev/null &

@@ -29,13 +29,21 @@ from common import get_host_ip
 
 ##########################################################################################
 # Define special processing functions for various sensor data
-def process_power_meter_data(data):
-    return round(3600.0/((pow(2,16)*data[2] + data[3])/16e6*1024))
+def process_hydro_power_data(data):
+    print("process_hydro_power_data({})".format(data))
+    return round(3600.0/((pow(2,16)*float(data[1]) + float(data[2]))/16.0e6*1024.0))
+
+def process_hydro_wh_data(data):
+    print("process_hydro_wh_data({})".format(data))
+    return data[2]
 
 def process_default(data):
-    return data
+    print("process_default({})".format(data))
+    return data[1]
 
-ProcessingFunctions = {'irq_0' : process_power_meter_data}
+ProcessingFunctions = {'hydro_power' : process_hydro_power_data,\
+                       'hydro_wh'    : process_hydro_wh_data,\
+                       }
 
 ##########################################################################################
 class IrqSubmit(threading.Thread):
@@ -84,27 +92,35 @@ class IrqSubmit(threading.Thread):
             if item['data'] == "ERROR_TEST":
                 self.redis.publish('error', __name__ + ": ERROR_TEST")
             else:
-                self.print_message(item)
+                if item['type'] == 'message':
+                    self.print_message(item)
                 #self.process_message(item)
 
         self.Log.debug('end of run()')
 
     def print_message(self, item):
         try:
+
             msg         = sjson.loads(item['data'])
             device_data = msg['MSG']['data']
-            cmd         = msg['MSG']['cmd']
-            info_string = "{:20s} | {:10s} : {:s}".format(msg['FROM'],cmd,str(device_data))
-            print(info_string)
+            timestamp   = msg['MSG']['timestamp']
 
-            processing_function = ProcessingFunctions.get(cmd,process_default)
-            val    = processing_function(device_data)
+            for data in device_data:
+                sn     = data[0]
+                processing_function = ProcessingFunctions.get(sn,process_default)
+                val    = processing_function(data)
+                print("Final dataset : sn = {0}, val = {1}".format(sn, val))
 
-            print("Final dataset : sn = {:s}, val = {:f}".format(cmd, val))
-
+                threshold   = 0
+                submit_data = [[sn, val]]
+                self.last_enqueue = self.Q.enqueue(submit, submit_data,\
+                                    timestamp=timestamp,\
+                                    submit_to=self.submit_to,\
+                                    threshold=threshold)
 
         except Exception as E:
-            self.Log.error(E.message)
+            self.Log.error("print_message(): " + E.message)
+            self.Log.error(item)
 
     def process_message(self, item):
         try:
@@ -114,7 +130,7 @@ class IrqSubmit(threading.Thread):
                 self.Log.debug('    msg=%s' % str(msg))
                 timestamp = datetime.datetime.strptime(msg[0].split('.')[0],"%Y-%m-%d-%H:%M:%S")
 
-                cmd  = msg[2]['cmd']
+                cmd = msg['MSG']['cmd']
                 data = msg[2]['data']
                 submit_data = None
                 threshold   = 0

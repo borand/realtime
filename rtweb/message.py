@@ -38,8 +38,8 @@ def main():
     msg = '{"TO": "you", "DATA": ["2014-06-13-21:58:53", 7, {"cmd": "adc", "data": [424, 391, 378, 378, 426]}], "FROM": "192.168.68.202:/dev/ttyUSB0"}'
     M.decode(msg)
     print(M.from_host)
-    print(M.to)
     print(M.msg)
+    print(M.to)
 
 if __name__ == "__main__":
     main()
