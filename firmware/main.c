@@ -24,6 +24,7 @@
 
 #include "main.h"
 
+#define FW_VERSION "rtweb 14.06.27"
 
 ISR(INT0_vect)
 {
@@ -32,25 +33,23 @@ ISR(INT0_vect)
 	if (count_Wh == 100)
 	{
 		count_cWh++;
+		eeprom_write_dword(&count_cWh_eeprom, count_cWh);
 		count_Wh = 0;
-		PrintCount_cWh();
-	}	
-    TCNT1            = 0;
-	timer1_ovf_count = 0;
-    //sbi(PORTB,PB0);
-	//Interrupt0();
-	//_delay_ms(1);
-	//toggle(PORTB,PB5);
-	//cbi(PORTB,PB0);
+		Flags.print_cWh = 1;
+	}
+	Flags.print_irq0       = 1;
+	Flags.timer1_ovf_count = timer1_ovf_count;
+	Flags.tcnt1            = TCNT1;
+	timer1_count           = TCNT1;
+    TCNT1                  = 0;
 }
 ISR(INT1_vect)
 {
-	toggle(PORTB,PB5);
 	Interrupt1();
 }
 ISR(TIMER1_OVF_vect)
 {
-	Timer1OvfFunc();
+	timer1_ovf_count++;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -89,13 +88,14 @@ void Interrupt0(void)
 	json_open_bracket();
 	PrintLabel(&eep_irq_sn[1]);
 	json_comma();
-	rprintfNum(10, 3, 0, ' ', timer1_ovf_count);
+	rprintfNum(10, 3, 0, ' ', Flags.timer1_ovf_count);
 	json_comma();
-	rprintfNum(10, 6, 0, ' ', TCNT1);
+	rprintfNum(10, 6, 0, ' ', timer1_count);
 	json_end_bracket();
 	json_end_bracket();
 	cmdlinePrintPromptEnd();
 	cmdlinePrintPrompt();
+	timer1_ovf_count       = 0;
 }
 void Interrupt1(void)
 {
@@ -105,15 +105,10 @@ void Interrupt1(void)
 	cmdlinePrintPrompt();
 }
 
-void Timer1OvfFunc(void)
-{
-	timer1_ovf_count++;
-	toggle(PORTB,PB1);
-}
 void PrintCount_cWh(void)
 {
     json_open_bracket();
-    PrintLabel(&count_cWh_eeprom);
+    PrintLabel(&eep_irq_sn[2]);
     json_comma();
     rprintfNum(10, 10, 0, ' ', count_cWh);
     json_end_bracket();
@@ -136,6 +131,8 @@ int main(void)
 
 	///////////////////////////////////////////////////////
 	// VARIABLE INIT
+	Flags.print_cWh   = 0;
+	Flags.print_irq0  = 0;
 
 	count_Wh  = 0;
 	count_cWh = eeprom_read_dword(&count_cWh_eeprom);
@@ -165,14 +162,15 @@ int main(void)
 
 	cbi(DDRD,PB2);
 
-	sbi(PORTB,PB5);
+	cbi(PORTB,PB5);
 	cbi(DDRD,PB2);
 	cbi(DDRD,PB3);
 
 
 	// GENERIC COMMANDS
 	cmdlineAddCommand("help", HelpFunction);
-	cmdlineAddCommand("idn",  GetVersion);
+	cmdlineAddCommand("idn",  GetIDN);
+	cmdlineAddCommand("getfw",GetFW);
 	cmdlineAddCommand("setsn",SetDevSNs);
 	cmdlineAddCommand("getsn",GetDevSNs);
 
@@ -208,8 +206,7 @@ int main(void)
 }
 void CmdLineLoop(void)
 {
-	uint8_t  c;	
-	uint32_t last_ext_interupt_count_0 = ext_interupt_count_0;	
+	uint8_t  c;
 
 	// set state to run
 	Run = TRUE;
@@ -219,8 +216,21 @@ void CmdLineLoop(void)
 		// pass characters received on the uart (serial port)
 		// into the cmdline processor
 		GetPortD();
-		if (last_ext_interupt_count_0 != ext_interupt_count_0)
+		if (Flags.print_irq0)
+		{
 			Interrupt0();
+			Flags.print_irq0 = 0;
+			toggle(PORTB,PB5);
+			sbi(PORTB,PB4);
+			_delay_ms(1);
+			cbi(PORTB,PB4);
+		}
+
+		if (Flags.print_cWh)
+		{
+			PrintCount_cWh();
+			Flags.print_cWh = 0;
+		}
 
 		while (uartReceiveByte(&c))
 		{
@@ -234,6 +244,11 @@ void CmdLineLoop(void)
 			case 'C':
 				vt100ClearScreen();
 				vt100SetCursorPos(1, 1);
+				cmdlinePrintPrompt();
+				break;
+			case 'W':
+				PrintCount_cWh();
+				cmdlinePrintPromptEnd();
 				cmdlinePrintPrompt();
 				break;
 			case 'I':
@@ -290,9 +305,17 @@ void HelpFunction(void)
 	rprintfProgStrM("owrp             : read specific page from 3824 device\n");
 	rprintfProgStrM("owwp             : write data to specified page\n");
 }
-void GetVersion(void)
+
+void GetFW(void)
 {
-	rprintfProgStrM("\"Avr328pConsole 328P V14.06.18\"");
+	rprintfProgStrM("\"");
+	rprintfProgStrM(FW_VERSION);
+	rprintfProgStrM("\"");
+	cmdlinePrintPromptEnd();
+}
+void GetIDN(void)
+{
+	PrintLabel(&eep_dev_sn[0]);
 	cmdlinePrintPromptEnd();
 }
 

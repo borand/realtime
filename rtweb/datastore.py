@@ -6,7 +6,6 @@ from logbook import Logger
 from requests import get
 from redis import Redis
 
-
 log = Logger('datastore')
 
 def get_last_value(serial_number):

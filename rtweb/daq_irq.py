@@ -57,11 +57,7 @@ class IrqSubmit(threading.Thread):
         self.last = []        
         self.Q = Queue(connection=Redis())
         self.last_q = self.Q.enqueue(submit,([[0,'0',0]]))
-        
-        if channel=='':
-            self.channel   = str(interface)
-        else:
-            self.channel   = channel
+        self.channel   = channel
 
         self.pubsub    = self.redis.pubsub()
         self.Log       = Logger('IrqSubmit')
@@ -184,5 +180,5 @@ if __name__ == "__main__":
     if arguments['run']:
         channel   = 'rtweb'
         host      = get_host_ip()
-        submit_to = get_host_ip()
+        submit_to = arguments.get('--submit_to', get_host_ip())
         StartIqrSubmit(channel, host, submit_to)

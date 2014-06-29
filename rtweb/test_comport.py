@@ -25,7 +25,7 @@ import simplejson as sj
 __author__ = 'andrzej'
 
 def main(C):
-    cmd_set = ['idn','peek 2b','test','adc','dio','getwh','resetwh','reset','owrom','owload','owsp','I','asdf',\
+    cmd_set = ['getfw', 'idn','peek 2b','test','adc','dio','getwh','resetwh','reset','owrom','owload','owsp','I','asdf',\
                'setsn s 0 arduino','setsn l 0 office','setsn a 0 A','setsn b 0 B','setsn d 0 D','setsn i 0 irq','getsn']
 
     C.log.level = 10
@@ -52,15 +52,12 @@ def validate_data(msg):
     except:
         return False
 
-
 def getdata(C):
     cmd_set = ['dio','getwh','adc','owtemp','I']
     for cmd in cmd_set:
         print(cmd)
         out = C.query(cmd)
         validate_data(out[1])
-
-
 
 def getsn(C):
 
@@ -164,7 +161,7 @@ if __name__ == '__main__':
     # {"cmd":"dio", "data": [["PORTB",49],["PORTB",15]]}
     # {"cmd":"adc", "data": [["a0",479],["a1",431],["a2",393],["a3",350],["a4",319]]}
     # {"cmd":"getwh", "data": [["hydro_wh",         0],["hydro_power",         0]]}
-    
+
     try:
         C = comport.ComPort(device)
         C.log.level = 10

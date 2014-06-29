@@ -19,6 +19,13 @@ typedef struct {
 	uint8_t label[20];
 } Label_t;
 
+typedef struct {
+	uint8_t  print_cWh;
+	uint8_t  print_irq0;
+	uint16_t tcnt1;
+	uint8_t  timer1_ovf_count;
+} Flags_t;
+
 uint8_t EEMEM eep_devid = 1;
 Label_t eep_dev_sn[1] EEMEM;
 Label_t eep_dev_location[1] EEMEM;
@@ -27,17 +34,21 @@ Label_t eep_portd_sn[NUM_OF_DIO_D] EEMEM;
 Label_t eep_portb_sn[NUM_OF_DIO_B] EEMEM;
 Label_t eep_irq_sn[NUM_OF_IRQ] EEMEM;
 
+uint8_t  timer1_ovf_count;
+uint16_t timer1_count;
+uint8_t  count_Wh;
 uint32_t ext_interupt_count_0;
-uint32_t timer1_ovf_count;
-uint32_t count_Wh;
 uint32_t count_cWh;
 
 uint8_t Run;
 uint8_t stream_timer_0;
 uint8_t port_d_last_val;
 
+Flags_t Flags;
+
 void SetDevSNs(void);
 void GetDevSNs(void);
+void GetFW(void);
 
 void GetA2D(void);
 void GetDIO(void);
@@ -48,7 +59,7 @@ void GetPortD(void);
 
 void CmdLineLoop(void);
 void HelpFunction(void);
-void GetVersion(void);
+void GetIDN(void);
 void StreamingControl(void);
 
 void test(void);

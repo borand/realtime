@@ -3,8 +3,8 @@
 Simple module for communicating with ComPort firmware written for AVR328p.
 
 Usage:
-  hardware.py test [--dev=DEV | --test | --submit_to=SUBMIT_TO | --redishost=REDISHOST]
-  hardware.py run [--dev=DEV | --test | --submit_to=SUBMIT_TO | --redishost=REDISHOST]
+  hardware.py test [--dev=DEV ] [--test] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
+  hardware.py run [--dev=DEV] [--test] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
   hardware.py (-h | --help)
 
 Options:
@@ -309,10 +309,11 @@ if __name__ == '__main__':
     print(dev)
 
 
-    test_json = arguments['--test']
-    run_main  = arguments['run']
+    test_json  = arguments['--test']
+    run_main   = arguments['run']
+    redis_host = arguments.get('--redishost',get_host_ip())
     
-    C = ComPort(dev)
+    C = ComPort(dev, host=redis_host)
     C.log.level = logbook.DEBUG
     
     if test_json:
@@ -326,7 +327,7 @@ if __name__ == '__main__':
                 print E    
     
     if run_main:
-        R = RedisSub(C)
+        R = RedisSub(C, host=redis_host)
         try:
             while True:
                 pass

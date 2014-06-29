@@ -37,6 +37,12 @@ def get_process_info(process):
             print(p)
             return p
 
+def SerialNumberToDec(hex_str):
+    dec_vector = []
+    for i in range(0,len(hex_str),2):
+        dec_vector.append(int(float.fromhex(hex_str[i:i+2])))
+    return dec_vector
+
 if __name__ == "__main__":
     #print(get_host_ip())
     get_python_process_info()
