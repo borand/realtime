@@ -37,11 +37,31 @@ def get_process_info(process):
             print(p)
             return p
 
-def SerialNumberToDec(hex_str):
+def SerialNumberToDec(hex_str, tostr=True):
     dec_vector = []
+    str_out = ''
     for i in range(0,len(hex_str),2):
         dec_vector.append(int(float.fromhex(hex_str[i:i+2])))
+
+    if tostr:
+        d = dec_vector
+        return "{0} {1} {2} {3} {4} {5} {6} {7}".format(d[0],d[1], d[2], d[3], d[4], d[5], d[6], d[7])
     return dec_vector
+
+def SerialNumberToHex(sn):
+
+    tmp = [int(x) for x in re.findall("(\d+)",sn)]
+
+    sn = ''
+    if len(tmp) == 8:
+        for i in tmp:
+            x = hex(i)[2:].upper()
+            if len(x) == 1:
+                x = '0'+x
+            sn+=x
+    else:
+        pass
+    return sn
 
 if __name__ == "__main__":
     #print(get_host_ip())

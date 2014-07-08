@@ -4,7 +4,7 @@ Simple module for communicating with ComPort firmware written for AVR328p.
 
 Usage:
   hardware.py test [--dev=DEV ] [--test] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
-  hardware.py run [--dev=DEV] [--test] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
+  hardware.py run [--dev=DEV] [--local] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
   hardware.py (-h | --help)
 
 Options:
@@ -312,6 +312,10 @@ if __name__ == '__main__':
     test_json  = arguments['--test']
     run_main   = arguments['run']
     redis_host = arguments.get('--redishost',get_host_ip())
+    run_local  = arguments.get('--local',False)
+
+    if run_local:
+        redis_host = 'localhost'
     
     C = ComPort(dev, host=redis_host)
     C.log.level = logbook.DEBUG

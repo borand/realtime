@@ -3,7 +3,7 @@
 Main webserver for rtweb
 
 Usage:
-  rtweb.py [--port=PORT]
+  rtweb.py [--port=PORT] [--host=HOST]
 
 Options:
   --port=PORT  [default: 8888]
@@ -50,6 +50,13 @@ class MainHandler(tornado.web.RequestHandler):
         interfaces = list(R.smembers('ComPort'))
         dynamic_content = { "title" : "RT WEB", "host_ip" : host_ip, "page_title" : 'Test', "interfaces" : interfaces}
         self.render("rtweb.html", title="RT WEB", host_ip=host_ip, page_title='Test', interfaces=interfaces)
+        #self.render("rtweb.html", dynamic_content)
+
+class ConsoleHandler(tornado.web.RequestHandler):
+    def get(self):
+        interfaces = list(R.smembers('ComPort'))
+        # dynamic_content = { "title" : "RTConsole", "host_ip" : host_ip, "page_title" : 'Test', "interfaces" : interfaces}
+        self.render("console.html", title="RTConsole", host_ip=host_ip, page_title='Test', interfaces=interfaces)
         #self.render("rtweb.html", dynamic_content)
 
 class CmdHandler(tornado.web.RequestHandler):
@@ -104,6 +111,7 @@ class MessageHandler(tornado.websocket.WebSocketHandler):
 
 application = tornado.web.Application([    
     (r'/', MainHandler),
+    (r'/console', ConsoleHandler),
     (r'/cmd/', CmdHandler),
     (r'/msg', NewMessageHandler),
     (r'/websocket', MessageHandler),
