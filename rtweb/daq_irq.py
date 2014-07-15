@@ -3,8 +3,8 @@
 module used to listen for new data on the redis channel and submit the data to sensoredweb
 
 Usage:
-  daq_irq.py test [--dev=DEV | --submit_to=SUBMIT_TO | --redishost=REDISHOST]
-  daq_irq.py run  [--dev=DEV | --submit_to=SUBMIT_TO | --redishost=REDISHOST]
+  daq_irq.py test [--dev=DEV] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
+  daq_irq.py run  [--dev=DEV] [--submit_to=SUBMIT_TO] [--redishost=REDISHOST]
   daq_irq.py (-h | --help)
 
 Options:
