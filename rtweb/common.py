@@ -5,6 +5,7 @@ __author__ = 'aborowie'
 import re
 import sh
 import psutil
+import datetime
 
 ##########################################################################################
 #
@@ -62,6 +63,19 @@ def SerialNumberToHex(sn):
     else:
         pass
     return sn
+
+def get_timestamp(timestamp=''):
+    if isinstance(timestamp, str):
+        if timestamp.lower() == 'now':
+            timestamp = datetime.datetime.now()
+        else:
+            try:
+                timestamp = datetime.datetime.strptime(timestamp.split('.')[0],"%Y-%m-%d-%H:%M:%S")
+            except:
+                timestamp = datetime.datetime.now()
+    else:
+        timestamp = datetime.datetime.now()
+    return timestamp
 
 if __name__ == "__main__":
     #print(get_host_ip())

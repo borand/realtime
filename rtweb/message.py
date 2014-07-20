@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from common import get_host_ip
 from simplejson import dumps, loads
 
 class Message(object):
@@ -7,7 +8,7 @@ class Message(object):
     Class for defining validating and handling messages send between system components
     """
 
-    def __init__(self, from_host='', to='', msg=''):
+    def __init__(self, from_host=get_host_ip(), to='', msg=''):
         self.from_host = from_host
         self.to        = to
         self.msg       = msg
