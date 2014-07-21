@@ -18,19 +18,14 @@ import tornado.ioloop
 import tornado.gen
 
 import tornadoredis
-import simplejson
 import os
-import sh
-import re
 import logbook
 
 from docopt import docopt
-from common import get_host_ip
+from ablib.util.common import get_host_ip
 
 from redis import Redis
-from comport import EXCHANGE
 
-from tornado.options import define, options
 #define("port", default=8888, help="run on the given port", type=int)
 
 ##########################################################################################
