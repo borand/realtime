@@ -22,7 +22,7 @@ import os
 import logbook
 
 from docopt import docopt
-from ablib.util.common import get_host_ip
+from common import get_host_ip
 
 from redis import Redis
 
