@@ -22,7 +22,7 @@ import os
 import logbook
 
 from docopt import docopt
-from common import get_host_ip
+from ablib.util.common import get_host_ip
 
 from redis import Redis
 
@@ -103,6 +103,38 @@ class MessageHandler(tornado.websocket.WebSocketHandler):
             self.client.unsubscribe(redis_pubsub_channel)
             self.client.disconnect()
 
+class SubscribeHandler(tornado.websocket.WebSocketHandler):
+    def __init__(self, *args, **kwargs):
+        super(SubscribeHandler, self).__init__(*args, **kwargs)
+        self.listen()
+
+    @tornado.gen.engine
+    def listen(self):
+        self.client = tornadoredis.Client(redis_host_ip)
+        self.client.connect()
+        yield tornado.gen.Task(self.client.subscribe, ("subscribe"))
+        self.client.listen(self.on_message)
+
+    def on_message(self, msg):
+        #log.debug(type(msg))
+        if isinstance(msg,unicode):
+            log.debug(msg)
+        else:
+            if msg.kind == 'message':
+                #log.debug(str(simplejson.loads(msg.body)))
+                self.write_message(str(msg.body))
+            if msg.kind == 'disconnect':
+                # Do not try to reconnect, just send a message back
+                # to the client and close the client connection
+                self.write_message('The connection terminated '
+                                   'due to a Redis server error.')
+                self.close()
+
+    def on_close(self):
+        if self.client.subscribed:
+            self.client.unsubscribe(redis_pubsub_channel)
+            self.client.disconnect()
+
 
 application = tornado.web.Application([    
     (r'/', MainHandler),
@@ -110,6 +142,7 @@ application = tornado.web.Application([
     (r'/cmd/', CmdHandler),
     (r'/msg', NewMessageHandler),
     (r'/websocket', MessageHandler),
+    (r'/sub', SubscribeHandler),
     ],
     template_path=os.path.join(os.path.dirname(__file__), "templates"),
     static_path=os.path.join(os.path.dirname(__file__), "static"),
