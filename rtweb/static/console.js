@@ -45,6 +45,16 @@ function console_response_msg(message, show) {
 	}
 }
 
+function console_response_text(message, show) {
+	if(show){
+		dbg(message,true);		
+		console.log(message);
+		$("#console").html($("#console").text() + "> " + message + '\n');
+		var psconsole = $('#console');
+		psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());		
+	}
+}
+
 function set_object_value(id, val){
 	var datarole = $("#"+id).attr('data-role');
 	dbg('id:' + id + " data-role: " + datarole + "  val: " + val, true);
@@ -104,7 +114,12 @@ function open_websocket(hostname, hostport, hosturl) {
 }
 
 function server_message_handler(data){
-	var JsonData;
+	var JsonData;	
+	if( $("#hosturl").val() == 'sub')
+	{
+		console_response_text(data, true);
+	}
+	else{
 
 	try {
 		JsonData = JSON.parse(data);
@@ -130,6 +145,7 @@ function server_message_handler(data){
 		}
 
 	}
+}
 }
 
 function connect_to_websocket_host(){
