@@ -283,7 +283,7 @@ function server_message_handler(data){
 					//dbg(JsonData.data, $('#debug_irq').prop("checked"))
 					//msg = JsonData.data[2].data;					
 					//console_response_msg(JsonData.data, $('#debug_irq').prop("checked"));
-					data = JsonData.MSG.data[0];
+					data = JsonData.MSG.data[1];
 					power_W = Math.round(3600.0/((Math.pow(2,16)*data[1] + data[2])/16e6*1024));
 					console.log(power_W);
 					add_measurement([power_W]);
