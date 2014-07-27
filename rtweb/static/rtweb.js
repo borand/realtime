@@ -278,30 +278,16 @@ function server_message_handler(data){
 	//console.log(JsonData)
 	console_response_msg(JsonData, true);
 	
-	if (JsonData.hasOwnProperty('id')) {		
-		switch(JsonData.id)
-		{
-			case 'debug_console':
-			{	
-				if (JsonData.data[2].cmd === 'irq_0'){
-					dbg(JsonData.data, $('#debug_irq').prop("checked"))
-					msg = JsonData.data[2].data;
-					console_response_msg(JsonData.data, $('#debug_irq').prop("checked"));					
-					power_W = Math.round(3600.0/((Math.pow(2,16)*msg[2] + msg[3])/16e6*1024));
+	if (JsonData.hasOwnProperty('MSG')) {		
+				if (JsonData.MSG.cmd === 'irq_0'){
+					//dbg(JsonData.data, $('#debug_irq').prop("checked"))
+					//msg = JsonData.data[2].data;					
+					//console_response_msg(JsonData.data, $('#debug_irq').prop("checked"));
+					data = JsonData.MSG.data[0];
+					power_W = Math.round(3600.0/((Math.pow(2,16)*data[1] + data[2])/16e6*1024));
+					console.log(power_W);
 					add_measurement([power_W]);
 				}
-				else{
-					dbg(JsonData.data, $('#debug_all').prop("checked"))					
-					console_response_msg(JsonData.data, true);
-				}
-				break;
-			}
-			default:
-			{	
-				set_object_value(JsonData.id, JsonData.val);
-			}
-		}
-
 	}
 }
 
