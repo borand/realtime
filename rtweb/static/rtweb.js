@@ -214,6 +214,8 @@ function add_measurement(value){
 	var t = (new Date()).getTime();
 	var num_of_series = chart.series.length;
 	
+	console.log('adding value to the plot :' + value);	
+
 	for (i=0;i<value.length;i++){
 		if (i >= num_of_series-1){
 			chart.addSeries({name : 'Data[' + i + ']', data : empty_data()},false,false);
@@ -278,7 +280,16 @@ function server_message_handler(data){
 	//console.log(JsonData)
 	console_response_msg(JsonData, true);
 	
-	if (JsonData.hasOwnProperty('MSG')) {		
+	var sn_to_plot = $('#sn_to_plot').val();
+	if (JsonData.hasOwnProperty('MSG')) {
+				
+				if (JsonData.MSG.hasOwnProperty('sn')){
+					if (JsonData.MSG.sn === sn_to_plot){
+						data = JsonData.MSG.data[0];
+						console.log('adding value to the plot :' + data)
+						add_measurement([data]);
+					};
+				};
 				if (JsonData.MSG.cmd === 'irq_0'){
 					//dbg(JsonData.data, $('#debug_irq').prop("checked"))
 					//msg = JsonData.data[2].data;					
@@ -309,6 +320,7 @@ $(document).ready(function() {
 	debug_websocket = $('#debug_websocket').prop("checked");
 	debug_js        = $('#debug_js').prop("checked");
 	debug_all       = $('#debug_all').prop("checked");
+
 	
 	$( "#radio-websocket-online" ).prop( "checked", false ).checkboxradio( "refresh" );
 	
