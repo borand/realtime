@@ -81,7 +81,7 @@ function parse_message(message_text){
 }
 ///////////////////////////////////////////////////////////////////////
 // WEBSOCKETS FUNCTIONS
-//
+//MessageHandler
 //
 function open_websocket(hostname, hostport, hosturl) {
 
@@ -152,8 +152,8 @@ function connect_to_websocket_host(){
 	var hostname = $('#hostname').val();
 	var hostport = $('#hostport').val();
 	var hosturl  = $('#hosturl').val();
-	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/'+ hosturl, true);
-	open_websocket(hostname, hostport, hosturl);
+	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + "/websocket/" + hosturl, true);
+	open_websocket(hostname, hostport, "websocket/" + hosturl);
 }
 ///////////////////////////////////////////////////////////////////////
 // MAIN GUI - jQUERY

@@ -79,6 +79,12 @@ class MessageHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         super(MessageHandler, self).__init__(*args, **kwargs)
 
+    def check_origin(self, origin):
+        return True
+
+    #def check_origin(self, origin):
+    #    parsed_origin = urllib.parse.urlparse(origin)
+    #    return parsed_origin.netloc.endswith(".mydomain.com")
 
     def open(self, chan):
         self.sub_channel = chan
@@ -192,7 +198,7 @@ class TestWebSocketHandler(tornado.websocket.WebSocketHandler):
         """ broadcast message to all connected clients """
         clients = cls.get_clients()
         # loop over every client and send message
-        for id, client in clients.iteritems():
+        for id, client in clieconsolents.iteritems():
             client.send_message(message)
 
     @classmethod
@@ -320,7 +326,7 @@ class Application(tornado.web.Application):
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             debug=True,
-            xsrf_cookies=True,
+            xsrf_cookies=False,
         )
         tornado.web.Application.__init__(self, handlers, **settings)
 
