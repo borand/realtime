@@ -24,24 +24,28 @@
 
 #include "main.h"
 
-#define FW_VERSION "rtweb 14.06.27"
+#define FW_VERSION "rtweb 15.06.04"
 
 ISR(INT0_vect)
 {
-	ext_interupt_count_0++;
-	count_Wh++;
-	if (count_Wh == 100)
+	_delay_ms(2);
+	if (!((PIND >> 2) & 1))
 	{
-		count_cWh++;
-		eeprom_write_dword(&count_cWh_eeprom, count_cWh);
-		count_Wh = 0;
-		Flags.print_cWh = 1;
+		ext_interupt_count_0++;
+		count_Wh++;
+		if (count_Wh == 100)
+		{
+			count_cWh++;
+			eeprom_write_dword(&count_cWh_eeprom, count_cWh);
+			count_Wh = 0;
+			Flags.print_cWh = 1;
+		}
+		Flags.print_irq0       = 1;
+		Flags.timer1_ovf_count = timer1_ovf_count;
+		Flags.tcnt1            = TCNT1;
+		timer1_count           = TCNT1;
+		TCNT1                  = 0;
 	}
-	Flags.print_irq0       = 1;
-	Flags.timer1_ovf_count = timer1_ovf_count;
-	Flags.tcnt1            = TCNT1;
-	timer1_count           = TCNT1;
-    TCNT1                  = 0;
 }
 ISR(INT1_vect)
 {
@@ -228,7 +232,10 @@ void CmdLineLoop(void)
 
 		if (Flags.print_cWh)
 		{
+			rprintfProgStrM("irq_print_cWh\",\"data\":");
 			PrintCount_cWh();
+			cmdlinePrintPromptEnd();
+			cmdlinePrintPrompt();
 			Flags.print_cWh = 0;
 		}
 
@@ -247,9 +254,10 @@ void CmdLineLoop(void)
 				cmdlinePrintPrompt();
 				break;
 			case 'W':
-				PrintCount_cWh();
-				cmdlinePrintPromptEnd();
-				cmdlinePrintPrompt();
+				//PrintCount_cWh();
+				//cmdlinePrintPromptEnd();
+				//cmdlinePrintPrompt();
+				Flags.print_cWh = 1;
 				break;
 			case 'I':
 				Interrupt0();
@@ -273,6 +281,7 @@ void HelpFunction(void)
 	rprintfProgStrM("Instant commands:\n");
 	rprintfProgStrM("D                : get port D value\n");
 	rprintfProgStrM("C                : clear screen\n");
+	rprintfProgStrM("W                : print kWh count\n");
 	rprintfProgStrM("I                : force interrupt 0 \n");
 	rprintfProgStrM("Z                : reset command number to zero\n");
 
@@ -518,7 +527,8 @@ void test(void)
 	// therm_print_scratchpad();
 	
 	rprintfProgStrM("{\"test\":");
-	PrintLabel(&eep_dev_sn[0]);	
+	rprintf("[%d, %d, %d]", PIND, PIND >> 2, (!((PIND >> 2) & 1)));
+	//PrintLabel(&eep_dev_sn[0]);
 	cmdlinePrintPromptEnd();
 
 //	value = arg1 & arg2;

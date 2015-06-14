@@ -65,6 +65,11 @@ class CmdHandler(tornado.web.RequestHandler):
         #self.write(msg)
         R.publish(chan + '-cmd',cmd)
 
+class HydroHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("hydro.html", title="Hydro", host_ip=host_ip, page_title='Hydro')
+        
+
 class NewMessageHandler(tornado.web.RequestHandler):
     def post(self):
         message = self.get_argument('message')
@@ -81,6 +86,7 @@ class MessageHandler(tornado.websocket.WebSocketHandler):
 
 
     def open(self, chan):
+        print("MessageHandler.open {0}".format(chan))
         self.sub_channel = chan
         self.listen()
 
@@ -307,6 +313,7 @@ class Application(tornado.web.Application):
         handlers = [
                 (r'/', MainHandler),
                 (r'/console', ConsoleHandler),
+                (r'/hydro', HydroHandler),
                 (r'/cmd/', CmdHandler),
                 (r'/msg', NewMessageHandler),
                 (r'/websocket/(?P<chan>.*)', MessageHandler),
@@ -315,6 +322,7 @@ class Application(tornado.web.Application):
                 (r'/test', ChatHandler),
                 (r"/chatsocket/(?P<chan>.*)", ChatSocketHandler),
                 ]
+        
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
