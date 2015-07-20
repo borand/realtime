@@ -35,6 +35,7 @@ from redis import Redis
 log = logbook.Logger('rtweb.py')
 redis_host_ip = get_host_ip()
 host_ip       = get_host_ip()
+host_port     = 8888;
 redis_pubsub_channel = ('rtweb', 'error')
 
 #c = tornadoredis.Client(host=redis_host_ip)
@@ -67,7 +68,7 @@ class CmdHandler(tornado.web.RequestHandler):
 
 class HydroHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("hydro.html", title="Hydro", host_ip=host_ip, page_title='Hydro')
+        self.render("hydro.html", title="Hydro", host_ip=host_ip, host_port=host_port, page_title='Hydro')
         
 
 class NewMessageHandler(tornado.web.RequestHandler):
@@ -342,8 +343,9 @@ if __name__ == '__main__':
     print("=== RTWEB ===")
     arguments = docopt(__doc__, version='Naval Fate 2.0')
     print(arguments)
-    port = int(arguments['--port'])
+    host_port = int(arguments['--port'])
+
     app = Application()
-    app.listen(port)
-    print('RTWEB is running at %s:%d\nQuit the demo with CONTROL-C' % (get_host_ip(), port))
+    app.listen(host_port)
+    print('RTWEB is running at %s:%d\nQuit the demo with CONTROL-C' % (get_host_ip(), host_port))
     tornado.ioloop.IOLoop.instance().start()

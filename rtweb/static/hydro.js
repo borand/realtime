@@ -69,12 +69,12 @@ function set_object_value(id, val){
 //
 //
 
-function draw_plot() {
+function draw_plot(renderTo) {
 	dbg('draw_plot', true);
 	
 	gauge = new Highcharts.Chart({
 		 chart: {
-		 	renderTo: 'hydro',
+		 	renderTo: renderTo,
             type: 'solidgauge'
         },
 
@@ -237,8 +237,8 @@ function server_message_handler(data){
 }
 
 function connect_to_websocket_host(){
-	var hostname = 'localhost';
-	var hostport = 8000;
+	var hostname = $("#div_hydro").attr('hostip');
+	var hostport = $("#div_hydro").attr('hostport');
 	var hosturl  = 'rtweb';
 	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/websocket/'+ hosturl, true);
 	open_websocket(hostname, hostport, hosturl);
@@ -252,7 +252,7 @@ $(document).ready(function() {
 	dbg('Document ready', true);
 	$("#live").css("background-color",'#C71C2C');	
 	connect_to_websocket_host();
-	draw_plot();
+	draw_plot("div_hydro");
 
  //    // The speed gauge
  //    $('#hydro').highcharts(Highcharts.merge(gaugeOptions, {
