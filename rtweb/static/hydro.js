@@ -37,9 +37,9 @@ function console_response_msg(message, show) {
 		chan = message['FROM'];
 		console.log(message['MSG'])
 		//$("#json_res").html($("#json_res").text() + chan + "> " + "cmd [" + message['MSG'][1] + "]: " + message['MSG'][2].data + '\n');
-		$("#json_res").html($("#json_res").text() + chan + "> " + JSON.stringify(message['MSG']) + '\n');
-		var psconsole = $('#json_res');
-		psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+		//$("#json_res").html($("#json_res").text() + chan + "> " + JSON.stringify(message['MSG']) + '\n');
+		//var psconsole = $('#json_res');
+		//psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
 	}
 }
 
