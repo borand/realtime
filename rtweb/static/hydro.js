@@ -146,25 +146,10 @@ function draw_plot(renderTo) {
 	});
 }
 
-function add_measurement(value){
-	
-	var t = (new Date()).getTime();
-	var num_of_series = gauge.series.length;
-	
-	console.log('adding value to the plot :' + value);	
-
-	for (i=0;i<value.length;i++){
-		if (i >= num_of_series-1){
-			gauge.addSeries({name : 'Data[' + i + ']', data : empty_data()},false,false);
-		}
-		else{
-			series = gauge.series[i];		
-			dbg('series.name = '+ series.name +', value[' + i +'] = ' + value[i],$('#debug_chart').prop("checked"));
-			if(series.name != 'Navigator'){
-				series.addPoint([t, value[i]], true, true);	
-			}
-		}
-	}
+function add_measurement(value){	
+	console.log('adding value to the plot :' + value);
+	point = gauge.series[0].points[0];	
+	point.update(value);
 }
 
 ///////////////////////////////////////////////////////////////////////
