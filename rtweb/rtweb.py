@@ -160,7 +160,7 @@ class SubscribeHandler(tornado.websocket.WebSocketHandler):
 
 class TestHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("test.html", messages=TestWebSocketHandler.cache)
+        self.render("test.html")
 
 class TestWebSocketHandler(tornado.websocket.WebSocketHandler):
     """
@@ -326,7 +326,7 @@ class Application(tornado.web.Application):
                 (r'/websocket/(?P<chan>.*)', MessageHandler),
                 (r'/sub', SubscribeHandler),
                 (r'/testsoc/(?P<user_id>.*)', TestWebSocketHandler),
-                (r'/test', ChatHandler),
+                (r'/test', TestHandler),
                 (r"/chatsocket/(?P<chan>.*)", ChatSocketHandler),
                 ]
         
