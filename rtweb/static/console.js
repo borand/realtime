@@ -81,7 +81,7 @@ function parse_message(message_text){
 }
 ///////////////////////////////////////////////////////////////////////
 // WEBSOCKETS FUNCTIONS
-//
+//MessageHandler
 //
 function open_websocket(hostname, hostport, hosturl) {
 
@@ -90,7 +90,7 @@ function open_websocket(hostname, hostport, hosturl) {
 		show_server_msg(message);		
 	}
 
-	var websocket_address = "ws://" + hostname + ":" + hostport + "/" + hosturl;
+	var websocket_address = "ws://" + hostname + ":" + hostport + "/websocket/" + hosturl;
 	ws = new WebSocket(websocket_address);
 	
 	ws.onopen = function() {
@@ -152,8 +152,13 @@ function connect_to_websocket_host(){
 	var hostname = $('#hostname').val();
 	var hostport = $('#hostport').val();
 	var hosturl  = $('#hosturl').val();
+<<<<<<< HEAD
 	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/' + '/websocket/' + hosturl, true);
+=======
+	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/' + 'websocket/' + hosturl, true);
+>>>>>>> c7b5c0e5751ef9ba3930520002cf26cd36b7fe79
 	open_websocket(hostname, hostport, hosturl);
+
 }
 ///////////////////////////////////////////////////////////////////////
 // MAIN GUI - jQUERY

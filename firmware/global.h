@@ -22,7 +22,7 @@
 
 // maximum length (number of characters) of each command string
 // (quantity must include one additional byte for a null terminator)
-#define CMDLINE_MAX_CMD_LENGTH	7
+#define CMDLINE_MAX_CMD_LENGTH	8
 
 // allotted buffer size for command entry
 // (must be enough chars for typed commands and the arguments that follow)

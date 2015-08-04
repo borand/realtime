@@ -118,3 +118,28 @@ void recal_memory_page(uint8_t page);
 void test_ds2438(void);
 void write_to_page(uint8_t page, uint8_t val);
 uint8_t get_ds2438_temperature(void);
+
+////////////////////////////////////////////////////////////////
+// Search algorithm
+#define TRUE 1 //if !=0
+#define FALSE 0
+
+unsigned char OWFirst(void);
+unsigned char OWNext(void);
+unsigned char OWSearch(void);
+unsigned char OWVerify(void);
+unsigned char docrc8(unsigned char value);
+
+//because 1wire uses bit times, setting the data line high or low with (_-) has no effect
+//we have to save the desired bus state, and then clock in the proper value during a clock(^)
+static unsigned char DS1wireDataState=0;//data bits are low by default.
+
+// global search state,
+//these lovely globals are provided courtesy of MAXIM's code
+//need to be put in a struct....
+unsigned char ROM_NO[8];
+unsigned char SearchChar=0xf0; //toggle between ROM and ALARM search types
+unsigned char LastDiscrepancy;
+unsigned char LastFamilyDiscrepancy;
+unsigned char LastDeviceFlag;
+unsigned char crc8;

@@ -35,6 +35,7 @@ from redis import Redis
 log = logbook.Logger('rtweb.py')
 redis_host_ip = get_host_ip()
 host_ip       = get_host_ip()
+host_port     = 8888;
 redis_pubsub_channel = ('rtweb', 'error')
 
 #c = tornadoredis.Client(host=redis_host_ip)
@@ -65,6 +66,11 @@ class CmdHandler(tornado.web.RequestHandler):
         #self.write(msg)
         R.publish(chan + '-cmd',cmd)
 
+class HydroHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("hydro.html", title="Hydro", host_ip=host_ip, host_port=host_port, page_title='Hydro')
+        
+
 class NewMessageHandler(tornado.web.RequestHandler):
     def post(self):
         message = self.get_argument('message')
@@ -79,8 +85,15 @@ class MessageHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         super(MessageHandler, self).__init__(*args, **kwargs)
 
+    def check_origin(self, origin):
+        return True
+
+    #def check_origin(self, origin):
+    #    parsed_origin = urllib.parse.urlparse(origin)
+    #    return parsed_origin.netloc.endswith(".mydomain.com")
 
     def open(self, chan):
+        print("MessageHandler.open {0}".format(chan))
         self.sub_channel = chan
         self.listen()
 
@@ -147,7 +160,7 @@ class SubscribeHandler(tornado.websocket.WebSocketHandler):
 
 class TestHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("test.html", messages=TestWebSocketHandler.cache)
+        self.render("test.html")
 
 class TestWebSocketHandler(tornado.websocket.WebSocketHandler):
     """
@@ -192,7 +205,7 @@ class TestWebSocketHandler(tornado.websocket.WebSocketHandler):
         """ broadcast message to all connected clients """
         clients = cls.get_clients()
         # loop over every client and send message
-        for id, client in clients.iteritems():
+        for id, client in clieconsolents.iteritems():
             client.send_message(message)
 
     @classmethod
@@ -307,20 +320,22 @@ class Application(tornado.web.Application):
         handlers = [
                 (r'/', MainHandler),
                 (r'/console', ConsoleHandler),
+                (r'/hydro', HydroHandler),
                 (r'/cmd/', CmdHandler),
                 (r'/msg', NewMessageHandler),
                 (r'/websocket/(?P<chan>.*)', MessageHandler),
                 (r'/sub', SubscribeHandler),
                 (r'/testsoc/(?P<user_id>.*)', TestWebSocketHandler),
-                (r'/test', ChatHandler),
+                (r'/test', TestHandler),
                 (r"/chatsocket/(?P<chan>.*)", ChatSocketHandler),
                 ]
+        
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             debug=True,
-            xsrf_cookies=True,
+            xsrf_cookies=False,
         )
         tornado.web.Application.__init__(self, handlers, **settings)
 
@@ -328,8 +343,9 @@ if __name__ == '__main__':
     print("=== RTWEB ===")
     arguments = docopt(__doc__, version='Naval Fate 2.0')
     print(arguments)
-    port = int(arguments['--port'])
+    host_port = int(arguments['--port'])
+
     app = Application()
-    app.listen(port)
-    print('RTWEB is running at %s:%d\nQuit the demo with CONTROL-C' % (get_host_ip(), port))
+    app.listen(host_port)
+    print('RTWEB is running at %s:%d\nQuit the demo with CONTROL-C' % (get_host_ip(), host_port))
     tornado.ioloop.IOLoop.instance().start()

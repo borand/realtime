@@ -1,68 +1,168 @@
-// Copyright 2009 FriendFeed
+///////////////////////////////////////////
+// Global variables
+var active_tab;
+var debug_websocket = false;
+var debug_js = true;
+var debug_all = true;
+var t;
+var ws;
+var JsonData;   
+/////////////////////////////////////////////////////////////////////
+// UTILITY FUNCTIONS
 //
-// Licensed under the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License. You may obtain
-// a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-// License for the specific language governing permissions and limitations
-// under the License.
-
-$(document).ready(function() {
-    if (!window.console) window.console = {};
-    if (!window.console.log) window.console.log = function() {};
-
-    $("#messageform").live("submit", function() {
-        newMessage($(this));
-        return false;
-    });
-    $("#messageform").live("keypress", function(e) {
-        if (e.keyCode == 13) {
-            newMessage($(this));
-            return false;
-        }
-    });
-    $("#message").select();
-    updater.start();
-});
-
-function newMessage(form) {
-    var message = form.formToDict();
-    updater.socket.send(JSON.stringify(message));
-    form.find("input[type=text]").val("").select();
+function dbg(message, show) {   
+    show_server_msg(message, show); 
 }
 
-jQuery.fn.formToDict = function() {
-    var fields = this.serializeArray();
-    var json = {}
-    for (var i = 0; i < fields.length; i++) {
-        json[fields[i].name] = fields[i].value;
-    }
-    if (json.next) delete json.next;
-    return json;
-};
+function SendCmd(cmd, val) {
+    return $.getJSON('/cmd/', "cmd=" + cmd + "&param=" + val, function(data) {          
+        $("#cmd_status").text(data.cmd);
+    });
+}
 
-var updater = {
-    socket: null,
-
-    start: function() {
-        var url = "ws://" + location.host + "/chatsocket/error";
-        updater.socket = new WebSocket(url);
-        updater.socket.onmessage = function(event) {
-            updater.showMessage(JSON.parse(event.data));
+function show_server_msg(message, show) {   
+    if (show)
+    {   
+        console.log(message);        
         }
-    },
-
-    showMessage: function(message) {
-        var existing = $("#m" + message.id);
-        if (existing.length > 0) return;
-        var node = $(message.html);
-        node.hide();
-        $("#inbox").append(node);
-        node.slideDown();
     }
-};
+}
+
+function console_response_text(message, show) {
+    if(show){
+        dbg(message,true);
+    }
+}
+
+function set_object_value(id, val){
+    var datarole = $("#"+id).attr('data-role');
+    dbg('id:' + id + " data-role: " + datarole + "  val: " + val, true);
+    switch(datarole){
+        case 'slider':
+            dbg('case: slider', true);
+            $('#' + id).val(val).slider("refresh");
+            break;
+        case 'flipswitch':          
+            dbg('about to flip the switch value to:' + val + ' currently set to: ' + $('#' + id).val(), true);
+            $('#' + id).val(val).flipswitch("refresh");
+            break;
+        case 'text':
+            $('#' + id).text(val);
+            break
+        default:
+            dbg('case: default', true);
+            $('#' + id).val(val)[datarole]("refresh");
+    }
+}
+
+function parse_message(message_text){
+    var temp;
+}
+///////////////////////////////////////////////////////////////////////
+// WEBSOCKETS FUNCTIONS
+//MessageHandler
+//
+function open_websocket(hostname, hostport, hosturl) {
+
+    dbg('Attempting to open web socket',true);
+    function show_message(message) {
+        show_server_msg(message);       
+    }
+
+    var websocket_address = "ws://" + hostname + ":" + hostport + "/websocket/" + hosturl;
+    ws = new WebSocket(websocket_address);
+    
+    ws.onopen = function() {
+        //debug_websocket = $('#debug_websocket').prop("checked");
+        dbg('web socket open', true);
+        // $('#live').text('CONNECTED');
+        // $("#live").css("background-color",'#B2BB1E');
+    };
+
+    ws.onmessage = function(event) {        
+        dbg('incomming message', true);
+        server_message_handler(event.data);
+    };
+    ws.onclose = function() {
+        //debug_websocket = $('#debug_websocket').prop("checked");
+        dbg('closing websockets', true);
+        // $('#live').text('OFFLINE');
+        // $("#live").css("background-color",'#FF0000');
+    };
+}
+
+function server_message_handler(data){    
+    if(0)
+    {
+        console_response_text(data, true);
+    }
+    else{
+
+    try {
+        JsonData = JSON.parse(data);
+        //console.log(JsonData)    
+                //         <th>Time</th>
+                // <th>Loger name</th>
+                // <th>Level</th>
+                // <th>Line #</th>
+                // <th>Filename</th>
+                // <th>Funcname</th>
+                // <th>Msg</th>
+                // <th>Hostname</th>                
+                // <th>Username</th>
+
+    t.row.add( [
+            JsonData.time,            
+            JsonData.name,
+            JsonData.level,
+            JsonData.line_no,
+            JsonData.filename,
+            JsonData.funcname,
+            JsonData.msg,
+            JsonData.hostname,
+            
+            JsonData.username,
+        ] ).draw();
+    } catch(e) {
+        dbg('JSON.parse error: "' + e + '". JsonData = ' + JsonData);
+        return;
+
+    }
+    
+}
+}
+
+function connect_to_websocket_host(){
+    var hostname = $('#hostname').attr("value");
+    var hostport = $('#hostport').attr("value");
+    var hosturl  = $('#hosturl').attr("value");
+    dbg('connect_to_websocket_host(' + hostname +':' + hostport + '/' + 'websocket/' + hosturl, true);
+    open_websocket(hostname, hostport, hosturl);
+
+}
+///////////////////////////////////////////////////////////////////////
+// MAIN GUI - jQUERY
+//
+//
+$(document).ready(function() {
+
+    dbg('Document ready', true);
+    connect_to_websocket_host();
+        t = $('#example').DataTable();
+    var counter = 1;
+
+
+ 
+    $('#addRow').on( 'click', function () {
+        t.row.add( [
+            counter +'.1',
+            counter +'.2',
+            counter +'.3',
+            counter +'.4',
+            counter +'.5'
+        ] ).draw();
+ 
+        counter++;
+    } );
+
+});

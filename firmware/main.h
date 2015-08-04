@@ -22,11 +22,13 @@ typedef struct {
 typedef struct {
 	uint8_t  print_cWh;
 	uint8_t  print_irq0;
+	uint8_t  print_adc;
 	uint16_t tcnt1;
 	uint8_t  timer1_ovf_count;
 } Flags_t;
 
 uint8_t EEMEM eep_devid = 1;
+uint16_t EEMEM eep_timer0_ovf_count = 200;
 Label_t eep_dev_sn[1] EEMEM;
 Label_t eep_dev_location[1] EEMEM;
 Label_t eep_adc_sn[NUM_OF_ADCS] EEMEM;
@@ -35,6 +37,7 @@ Label_t eep_portb_sn[NUM_OF_DIO_B] EEMEM;
 Label_t eep_irq_sn[NUM_OF_IRQ] EEMEM;
 
 uint8_t  timer1_ovf_count;
+uint16_t timer0_ovf_count;
 uint16_t timer1_count;
 uint8_t  count_Wh;
 uint32_t ext_interupt_count_0;
@@ -79,6 +82,7 @@ void OneWireReadRom(void);
 void OneWireReadPage(void);
 void OneWirerintScratchPad(void);
 void OneWireWritePage(void);
+void OneSearch(void);
 void ChangeTmermPin(void);
 
 void PrintLabel(Label_t *eep_label);
@@ -92,5 +96,6 @@ void Interrupt0(void);
 void Interrupt1(void);
 void Timer1OvfFunc(void);
 void Timer0Func(void);
+void SetInterval(void);
 
 #endif /* MAIN_H_ */

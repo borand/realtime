@@ -24,24 +24,28 @@
 
 #include "main.h"
 
-#define FW_VERSION "rtweb 14.06.27"
+#define FW_VERSION "rtweb 15.07.14"
 
 ISR(INT0_vect)
 {
-	ext_interupt_count_0++;
-	count_Wh++;
-	if (count_Wh == 100)
+	_delay_ms(2);
+	if (!((PIND >> 2) & 1))
 	{
-		count_cWh++;
-		eeprom_write_dword(&count_cWh_eeprom, count_cWh);
-		count_Wh = 0;
-		Flags.print_cWh = 1;
+		ext_interupt_count_0++;
+		count_Wh++;
+		if (count_Wh == 100)
+		{
+			count_cWh++;
+			eeprom_write_dword(&count_cWh_eeprom, count_cWh);
+			count_Wh = 0;
+			Flags.print_cWh = 1;
+		}
+		Flags.print_irq0       = 1;
+		Flags.timer1_ovf_count = timer1_ovf_count;
+		Flags.tcnt1            = TCNT1;
+		timer1_count           = TCNT1;
+		TCNT1                  = 0;
 	}
-	Flags.print_irq0       = 1;
-	Flags.timer1_ovf_count = timer1_ovf_count;
-	Flags.tcnt1            = TCNT1;
-	timer1_count           = TCNT1;
-    TCNT1                  = 0;
 }
 ISR(INT1_vect)
 {
@@ -56,21 +60,13 @@ ISR(TIMER1_OVF_vect)
 // INTERRUPT CONTROL
 void Timer0Func(void)
 {
-	if (timer0GetOverflowCount() >= 200)
+	if (timer0GetOverflowCount() >= timer0_ovf_count)
 	{
 		if (stream_timer_0)
 		{
-			rprintfProgStrM("irq_tovf_0\",\"data\":[");
-			//GetA2D();
-			//rprintfProgStrM(", ");
-			GetDIO();
-			json_end_bracket();
-			cmdlinePrintPromptEnd();
 			timer0ClearOverflowCount();
-			cmdlinePrintPrompt();
+			Flags.print_adc = 1;
 		}
-		//therm_reset();
-		//therm_start_measurement();
 	}
 }
 
@@ -136,6 +132,7 @@ int main(void)
 
 	count_Wh  = 0;
 	count_cWh = eeprom_read_dword(&count_cWh_eeprom);
+	timer0_ovf_count = eeprom_read_dword(&eep_timer0_ovf_count);
 
 	port_d_last_val = PIND >> 4;
 	///////////////////////////////////////////////////////
@@ -183,6 +180,7 @@ int main(void)
 	cmdlineAddCommand("dio",  GetDIO);
 
 	cmdlineAddCommand("stream", StreamingControl);
+	cmdlineAddCommand("interval", SetInterval);
 
 	cmdlineAddCommand("getwh", GetWh);
 	cmdlineAddCommand("resetwh", ResetWh);
@@ -199,6 +197,7 @@ int main(void)
 	cmdlineAddCommand("owdata", GetOneWireMeasurements);
 	cmdlineAddCommand("owrp",   OneWireReadPage);
 	cmdlineAddCommand("owwp",   OneWireWritePage);
+	cmdlineAddCommand("owsearch",   OneSearch);
 
 	cmdlinePrintPrompt();
 	CmdLineLoop();
@@ -228,8 +227,20 @@ void CmdLineLoop(void)
 
 		if (Flags.print_cWh)
 		{
+			rprintfProgStrM("irq_print_cWh\",\"data\":");
 			PrintCount_cWh();
+			cmdlinePrintPromptEnd();
+			cmdlinePrintPrompt();
 			Flags.print_cWh = 0;
+		}
+
+		if (Flags.print_adc)
+		{
+			Flags.print_adc = 0;
+			rprintfProgStrM("adc\",\"data\":");
+			GetA2D();
+			cmdlinePrintPromptEnd();
+			cmdlinePrintPrompt();
 		}
 
 		while (uartReceiveByte(&c))
@@ -237,6 +248,9 @@ void CmdLineLoop(void)
 			switch (c)
 			{
 			{
+			case 'A':
+				Flags.print_adc = 1;
+				break;
 			case 'D':
 				port_d_last_val = 0;
 				GetPortD();
@@ -247,9 +261,7 @@ void CmdLineLoop(void)
 				cmdlinePrintPrompt();
 				break;
 			case 'W':
-				PrintCount_cWh();
-				cmdlinePrintPromptEnd();
-				cmdlinePrintPrompt();
+				Flags.print_cWh = 1;
 				break;
 			case 'I':
 				Interrupt0();
@@ -273,6 +285,7 @@ void HelpFunction(void)
 	rprintfProgStrM("Instant commands:\n");
 	rprintfProgStrM("D                : get port D value\n");
 	rprintfProgStrM("C                : clear screen\n");
+	rprintfProgStrM("W                : print kWh count\n");
 	rprintfProgStrM("I                : force interrupt 0 \n");
 	rprintfProgStrM("Z                : reset command number to zero\n");
 
@@ -518,7 +531,9 @@ void test(void)
 	// therm_print_scratchpad();
 	
 	rprintfProgStrM("{\"test\":");
-	PrintLabel(&eep_dev_sn[0]);	
+	//rprintf("[%d, %d, %d]", PIND, PIND >> 2, (!((PIND >> 2) & 1)));
+	rprintf("%d",timer0_ovf_count);
+	//PrintLabel(&eep_dev_sn[0]);
 	cmdlinePrintPromptEnd();
 
 //	value = arg1 & arg2;
@@ -673,7 +688,13 @@ void StreamingControl(void)
 	rprintf("%d",stream_timer_0);
 	cmdlinePrintPromptEnd();
 }
-
+void SetInterval(void)
+{
+	timer0_ovf_count = (uint16_t) cmdlineGetArgInt(1);
+	eeprom_write_dword(&eep_timer0_ovf_count, timer0_ovf_count);
+	rprintf("%d",timer0_ovf_count);
+	cmdlinePrintPromptEnd();
+}
 ////////////////////////////////////////////////////////////////
 // ONE WIRE DEVICES
 //
@@ -807,4 +828,8 @@ void OneWirerintScratchPad(void)
 {
 	therm_print_scratchpad();
 	cmdlinePrintPromptEnd();
+}
+void OneSearch(void)
+{
+
 }
