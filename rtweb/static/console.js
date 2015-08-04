@@ -152,7 +152,7 @@ function connect_to_websocket_host(){
 	var hostname = $('#hostname').val();
 	var hostport = $('#hostport').val();
 	var hosturl  = $('#hosturl').val();
-	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/'+ hosturl, true);
+	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/' + '/websocket/' + hosturl, true);
 	open_websocket(hostname, hostport, hosturl);
 }
 ///////////////////////////////////////////////////////////////////////
