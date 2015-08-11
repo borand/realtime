@@ -335,7 +335,7 @@ $(document).ready(function() {
 	$("#live").css("background-color",'#C71C2C');
 	
 	draw_chart('chart');
-	draw_plot();
+	// draw_plot();
 	connect_to_websocket_host();
 	
 	///////////////////////////////////////////////////////////////////////
@@ -390,5 +390,7 @@ $(document).ready(function() {
 		SendCmd('ping', 0);
 		$("#cmd_status").text("Pressed options_ping button");
 	});
+
+	$('#datatable').DataTable();
 
 });

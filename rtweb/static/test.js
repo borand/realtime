@@ -24,21 +24,6 @@ function show_server_msg(message, show) {
     if (show)
     {   
         console.log(message);        
-    }
-}
-
-function console_response_msg(message, show) {
-    if(show){
-        dbg(message,true);
-        selected_chan = $("#select-chan").val();
-        chan = message['FROM'];
-        console.log(message['MSG'])
-        //$("#console").html($("#console").text() + chan + "> " + "cmd [" + message['MSG'][1] + "]: " + message['MSG'][2].data + '\n');
-        if (selected_chan === chan || selected_chan == 'All')
-        {
-            $("#console").html($("#console").text() + chan + "> " + JSON.stringify(message['MSG']['data']) + '\n');
-            var psconsole = $('#console');
-            psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
         }
     }
 }
