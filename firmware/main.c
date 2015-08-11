@@ -65,8 +65,11 @@ void Timer0Func(void)
 		if (stream_timer_0)
 		{
 			timer0ClearOverflowCount();
-			Flags.print_adc = 1;
+			Flags.print_adc  = 1;
+			Flags.print_temp = 1;
 		}
+		therm_reset();
+		therm_start_measurement();
 	}
 }
 
@@ -129,10 +132,12 @@ int main(void)
 	// VARIABLE INIT
 	Flags.print_cWh   = 0;
 	Flags.print_irq0  = 0;
+	Flags.print_temp  = 0;
+	Flags.print_adc   = 0;
 
 	count_Wh  = 0;
 	count_cWh = eeprom_read_dword(&count_cWh_eeprom);
-	timer0_ovf_count = eeprom_read_dword(&eep_timer0_ovf_count);
+	eeprom_read_dword(&eep_timer0_ovf_count);
 
 	port_d_last_val = PIND >> 4;
 	///////////////////////////////////////////////////////
@@ -163,6 +168,7 @@ int main(void)
 	cbi(DDRD,PB2);
 	cbi(DDRD,PB3);
 
+	eeprom_write_dword(&eep_timer0_ovf_count, (uint16_t)400);
 
 	// GENERIC COMMANDS
 	cmdlineAddCommand("help", HelpFunction);
@@ -198,6 +204,7 @@ int main(void)
 	cmdlineAddCommand("owrp",   OneWireReadPage);
 	cmdlineAddCommand("owwp",   OneWireWritePage);
 	cmdlineAddCommand("owsearch",   OneSearch);
+
 
 	cmdlinePrintPrompt();
 	CmdLineLoop();
@@ -240,6 +247,16 @@ void CmdLineLoop(void)
 			rprintfProgStrM("adc\",\"data\":");
 			GetA2D();
 			cmdlinePrintPromptEnd();
+			cmdlinePrintPrompt();
+		}
+		if (Flags.print_temp)
+		{
+			Flags.print_temp = 0;
+
+			//GetA2D();
+			rprintfProgStrM("owtemp\",\"data\":");
+			GetTemperature();
+			//cmdlinePrintPromptEnd();
 			cmdlinePrintPrompt();
 		}
 
@@ -530,11 +547,13 @@ void test(void)
 	// get_ds2438_temperature();
 	// therm_print_scratchpad();
 	
-	rprintfProgStrM("{\"test\":");
+	StartTemperatureMeasurement();
+
+	//rprintfProgStrM("{\"test\":");
 	//rprintf("[%d, %d, %d]", PIND, PIND >> 2, (!((PIND >> 2) & 1)));
-	rprintf("%d",timer0_ovf_count);
+	//rprintf("%d",timer0_ovf_count);
 	//PrintLabel(&eep_dev_sn[0]);
-	cmdlinePrintPromptEnd();
+	//cmdlinePrintPromptEnd();
 
 //	value = arg1 & arg2;
 //	rprintfNum(10,4,FALSE,' ',value);rprintf("\t");
@@ -691,9 +710,17 @@ void StreamingControl(void)
 void SetInterval(void)
 {
 	timer0_ovf_count = (uint16_t) cmdlineGetArgInt(1);
-	eeprom_write_dword(&eep_timer0_ovf_count, timer0_ovf_count);
-	rprintf("%d",timer0_ovf_count);
-	cmdlinePrintPromptEnd();
+	if (timer0_ovf_count == 0)
+	{
+		eeprom_read_dword(&timer0_ovf_count);
+		rprintf("%d",timer0_ovf_count);
+	}
+	else
+	{
+		eeprom_write_dword(&eep_timer0_ovf_count, timer0_ovf_count);
+		rprintf("%d",timer0_ovf_count);
+		cmdlinePrintPromptEnd();
+	}
 }
 ////////////////////////////////////////////////////////////////
 // ONE WIRE DEVICES
@@ -709,51 +736,72 @@ void StartTemperatureMeasurement(void)
 	rprintfProgStrM("1");
 	cmdlinePrintPromptEnd();
 }
+//void StartTemperatureMeasurement(void)
+//{
+//	therm_reset();
+//	therm_start_measurement();
+//	_delay_ms(750);
+//}
+
 void GetTemperature(void)
 {
 	int16_t t[2];
 	uint8_t i, device_count = 0, loop_count=0;
-	int8_t devNum = (int8_t) cmdlineGetArgInt(1);
+	int8_t devNum = 0;//(int8_t) cmdlineGetArgInt(1);
 
-	therm_reset();
-	therm_start_measurement();
-	_delay_ms(750);
 	rprintfProgStrM("[");
-	if (devNum == 0)
-	{
-// 		for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
-// 		{
-// 			if (therm_load_devID(i))
-// 				device_count++;
-// 		}
-		for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
-		{
-			if (therm_load_devID(i))
+	for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
 			{
-				loop_count++;
-				json_open_bracket();
-				therm_print_devID();json_comma();
-				therm_read_result(t);json_comma();
-				therm_print_scratchpad();
-                json_end_bracket();
-                json_comma();
+				if (therm_load_devID(i))
+				{
+					loop_count++;
+					json_open_bracket();
+					therm_print_devID();json_comma();
+					therm_read_result(t);json_comma();
+					therm_print_scratchpad();
+	                json_end_bracket();
+	                json_comma();
+				}
 			}
-		}
-	}
-	else if (devNum == -1)
-	{
-		therm_read_devID();
-		therm_read_result(t);
-	}
-	else
-	{
-		if (therm_load_devID(devNum))
-		{
-			therm_read_result(t);
-		}
-	}
 	rprintfProgStrM("[\"0\",0,0]]");
 	cmdlinePrintPromptEnd();
+
+
+//	if (devNum == 0)
+//	{
+//// 		for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
+//// 		{
+//// 			if (therm_load_devID(i))
+//// 				device_count++;
+//// 		}
+//		for (i = 1; i <= MAX_NUMBER_OF_1WIRE_DEVICES; i++)
+//		{
+//			if (therm_load_devID(i))
+//			{
+//				loop_count++;
+//				json_open_bracket();
+//				therm_print_devID();json_comma();
+//				therm_read_result(t);json_comma();
+//				therm_print_scratchpad();
+//                json_end_bracket();
+//                json_comma();
+//			}
+//		}
+//	}
+//	else if (devNum == -1)
+//	{
+//		therm_read_devID();
+//		therm_read_result(t);
+//	}
+//	else
+//	{
+//		if (therm_load_devID(devNum))
+//		{
+//			therm_read_result(t);
+//		}
+//	}
+//	rprintfProgStrM("[\"0\",0,0]]");
+//	cmdlinePrintPromptEnd();
 }
 void GetOneWireMeasurements(void)
 {

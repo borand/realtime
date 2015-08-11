@@ -14,19 +14,19 @@ EE_RAM_t __attribute__((section (".eeprom"))) eeprom =
 		30,//uint8_t  t_read_samp;
 		100, //uint8_t  t_read_slot;
 		0, 0, 0, 0, 0, 0, 0, 0,//0
+		16, 234, 182, 210, 1, 8, 0, 21, //6  Device
 //	16,  72, 183, 210,   1,   8,   0, 234,
 //	16,  48, 184, 210,   1,   8,   0, 188,
 //	16,  27, 191, 210,   1,   8,   0, 163,
 //	16, 242,  55, 192,   1,   8,   0, 214,
 //	16,   2, 189, 210,   1,   8,   0, 237,
 //	16, 154,  63, 211,   1,   8,   0,  58,
-
+//
 //		16, 126, 137, 210, 1, 8, 0, 147,//1  Basement staircase
 //		16, 185, 54, 192, 1, 8, 0, 150, //2  Basement corner window
 //		16, 184, 142, 210, 1, 8, 0, 239,//3  Basement corner window outside
 //		16, 151, 41, 192, 1, 8, 0, 32, //4  Basement corner by the electrical panel
 //		16, 243, 241, 210, 1, 8, 0, 96, //5  Basement over the desk
-//		16, 234, 182, 210, 1, 8, 0, 21, //6  Device
 //		16, 72, 183, 210, 1, 8, 0, 234, //7  Device
 //		16, 2, 189, 210, 1, 8, 0, 237, //8  Device
 //		16, 27, 191, 210, 1, 8, 0, 163, //9  Device
@@ -615,6 +615,7 @@ void write_to_page(uint8_t page, uint8_t val)
 	therm_write_byte(page);
 }
 
+/*
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Search algorithm
 
@@ -627,6 +628,7 @@ void write_to_page(uint8_t page, uint8_t val)
 // Return TRUE  : device found, ROM number in ROM_NO buffer
 //        FALSE : no device present
 //
+
 unsigned char OWFirst()
 {
    // reset the search state
@@ -853,3 +855,4 @@ unsigned char docrc8(unsigned char value)
    return crc8;
 }
 
+*/

@@ -23,6 +23,7 @@ typedef struct {
 	uint8_t  print_cWh;
 	uint8_t  print_irq0;
 	uint8_t  print_adc;
+	uint8_t  print_temp;
 	uint16_t tcnt1;
 	uint8_t  timer1_ovf_count;
 } Flags_t;
