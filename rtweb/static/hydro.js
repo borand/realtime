@@ -224,7 +224,7 @@ function server_message_handler(data){
 function connect_to_websocket_host(){
 	var hostname = $("#div_hydro").attr('hostip');
 	var hostport = $("#div_hydro").attr('hostport');
-	var hosturl  = 'rtweb';
+	var hosturl  = 'data';
 	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/websocket/'+ hosturl, true);
 	open_websocket(hostname, hostport, hosturl);
 }
@@ -234,7 +234,7 @@ function connect_to_websocket_host(){
 //
 $(document).ready(function() {
 
-	dbg('Document ready', true);
+	dbg('Document ready - ready', true);
 	$("#live").css("background-color",'#C71C2C');	
 	connect_to_websocket_host();
 	draw_plot("div_hydro");

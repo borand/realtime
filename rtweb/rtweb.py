@@ -36,7 +36,7 @@ log = logbook.Logger('rtweb.py')
 redis_host_ip = get_host_ip()
 host_ip       = get_host_ip()
 host_port     = 8888;
-redis_pubsub_channel = ('rtweb', 'error')
+redis_pubsub_channel = ('data', 'error')
 
 #c = tornadoredis.Client(host=redis_host_ip)
 #c.connect()
@@ -68,6 +68,7 @@ class CmdHandler(tornado.web.RequestHandler):
 
 class HydroHandler(tornado.web.RequestHandler):
     def get(self):
+        print "Getting the hydro page"
         self.render("hydro.html", title="Hydro", host_ip=host_ip, host_port=host_port, page_title='Hydro')
         
 
@@ -344,6 +345,8 @@ if __name__ == '__main__':
     arguments = docopt(__doc__, version='Naval Fate 2.0')
     print(arguments)
     host_port = int(arguments['--port'])
+    template_path=os.path.join(os.path.dirname(__file__), "templates")
+    static_path=os.path.join(os.path.dirname(__file__), "static")
 
     app = Application()
     app.listen(host_port)
