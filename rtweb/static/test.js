@@ -27,6 +27,28 @@ function slugify(text)
     .replace(/-+$/, '');            // Trim - from end of text
 }
 
+function is_log_active(JsonData){
+    var tmp = [];
+    var x = $("input[name='cbcb_filename']");
+    if (x.length){
+        //$("input[name='cbcb_filename']").each(function() {if($(this).is(":checked")){tmp.push($(this).attr('id'));}});        
+        x.each(function() {if($(this).is(":checked")){tmp.push($(this).attr('id'));}});
+        return tmp.indexOf("cb_" + JsonData.name) > -1;
+    }
+    else{
+        return true
+    };
+};
+
+function console_response_msg(message, show) {
+    if(show){
+        dbg(message);        
+        $("#ws_console").html($("#ws_console").text() + message + '\n');
+        var psconsole = $('#ws_console');
+        psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+    }
+};
+
 function open_websocket(hostname, hosturl) {
     dbg('Attempting to open web socket',true);
 
@@ -56,7 +78,7 @@ function add_to_table_if_does_not_exist(table_id, fieldname){
     //console.log("fieldname= " + fieldname + " sn = " + sn)
     if (($("#"+sn).length) == 0)
     {
-        $("#"+table_id).append('<input type="checkbox" name="cb' + sn +'" id="'+sn+'"><label for="'+sn+'">'+fieldname+'</label>').trigger('create');
+        $("#"+table_id).append('<input type="checkbox" checked=true name="cb' + table_id +'" id="'+sn+'"><label for="'+sn+'">'+fieldname+'</label>').trigger('create');
     }
 }
 
@@ -69,6 +91,7 @@ function server_message_handler(data){
         //console.log("JsonData = " + JsonData);
         //console.log("JsonData.time = " + JsonData.time);
         var timestamp = new Date(JsonData.time);
+        var x = $("input[name='cbcb_filename']");
         var row_data = [
             timestamp.toLocaleTimeString(),
             JsonData.name,
@@ -80,11 +103,14 @@ function server_message_handler(data){
             JsonData.hostname,
             JsonData.username,
             ];
-        //console.log("row_data = " + row_data);
-        table.row.add(row_data).draw();
-        add_to_table_if_does_not_exist("cbfn", JsonData.name);
+        console_response_msg(row_data, true);
+        if (is_log_active(JsonData)){
+            table.row.add(row_data).draw();
+        };        
+        add_to_table_if_does_not_exist("cb_filename", JsonData.name);
         add_to_table_if_does_not_exist("cb_hostname", JsonData.hostname);
         add_to_table_if_does_not_exist("cb_username", JsonData.username);
+        
 
     } catch(e) {
         dbg('JSON.parse error: "' + e + '". JsonData = ' + JsonData);
@@ -92,9 +118,16 @@ function server_message_handler(data){
     }
 }
 
+function connect_to_websocket_host(){
+    var hostname = $('#hostname').val();
+    var hostport = $('#hostport').val();
+    var hosturl  = $('#hosturl').val();
+    dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/websocket/'+ hosturl, true);
+    open_websocket(hostname+':'+hostport, hosturl);
+}
 $(document).ready(function() {
-
-    open_websocket('192.168.1.12:8889', "log");
+    
+    connect_to_websocket_host();
     table = $('#example').DataTable({
         //"order": [[ 0, "desc" ]],
         "paging":   false,
@@ -121,6 +154,9 @@ $(document).ready(function() {
 
     var dataSet = [['12:00:00','self','1',144,"Test",'ulog.js',"var dataSet","localhost",'root'],];
 
+    $("#button_connect").click(function() { 
+        connect_to_websocket_host();
+    });
     // http://jsfiddle.net/KPkJn/9/
     var sn = 0;
     $( "#button_test" ).click(function() {

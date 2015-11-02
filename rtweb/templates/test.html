@@ -71,7 +71,7 @@
 						</div>
 						<div class="ui-body ui-body-a">
 							<!-- <div data-role="content"> -->							
-							<textarea rows="15" name="textarea" id="json_res" data-role="textarea" type="etc."></textarea>
+							<textarea rows="15" name="textarea" id="ws_console" data-role="textarea" type="etc."></textarea>
 							
 							<div class="ui-field-contain">
 							<label for="select-chan" class="select">Custom select menu:</label>
@@ -130,24 +130,6 @@
 						</div>
 
 													<!-- ######################################################################## -->
-<!-- 
-								<form>
-    							<label for="adc">ADC</label>
-    							<input name="slider-2" id="adc" data-highlight="true" min="0" max="100" value="50" type="range" data-role="slider">
-								</form>
-								
-								<label for="flip">Checkbox-based:</label>
-								<select type="checkbox" id="flip" data-role="flipswitch" data-wrapper-class="custom-size-flipswitch">
-									<option value="off">Off</option>
-									<option value="on">On</option>
-								</select>
-								
-								<label for="daq_msg">Server Message</label>
-								<input name="daq_msg" id="daq_msg" placeholder="daq msg" value="" type="text">
-							-->
-							<!-- ######################################################################## -->
-
-
 					</div>
 				</div>
 				<!-- TAB DEBUG -->
@@ -163,9 +145,8 @@
 
 								<div class="ui-block-a">
 									<label for="hostname">Host name</label>
-									<input type="text" name="hostname" id="hostname" value="localhost" data-mini="true">
+									<input type="text" name="hostname" id="hostname" value="47.135.58.93" data-mini="true">
 								</div>
-
 								<div class="ui-block-b">
 									<label for="hostport">Host name</label>
 									<input type="number" name="number" pattern="[0-9]*" id="hostport" value="8888" data-mini="true">
@@ -182,21 +163,21 @@
 							<a class="ui-btn ui-btn-inline ui-icon-phone ui-btn-icon-left" id="button_connect">Connect</a>
 							<button class="ui-btn ui-btn-inline" data-theme="b" id="button_disconnect">Disconnect</button>
 							<button class="ui-btn ui-btn-inline" data-theme="b" id="button_test">Test</button>
+							<button class="ui-btn ui-btn-inline" data-theme="b" id="button_clear">Clear</button>
 						</div>
+						
 						<div data-role="collapsible" data-collapsed="false">
 							<h4>Heading</h4>
-						<form>
-							    <fieldset data-role="controlgroup" id="form_filename" data-mini="true" class="cb_filename" data-role="collapsible">
-							        <legend id="cbfn">Filename:</legend>
-							    </fieldset>
-								 <fieldset data-role="controlgroup" id="form_filename" data-mini="true" class="cb_filename" data-role="collapsible">
-							        <legend id="cb_hostname">Hostname:</legend>
-							    </fieldset>
-							</fieldset>
-							<fieldset data-role="controlgroup" id="form_filename" data-mini="true" class="cb_filename" data-role="collapsible">
-							        <legend id="cb_username">Hostname:</legend>
-							</fieldset>
-						</form>
+							<form>
+								<fieldset data-role="controlgroup" id="form_filename" data-mini="true">
+								<legend id="cb_filename">Filename:</legend>	</fieldset>
+
+								<fieldset data-role="controlgroup" id="form_filename" data-mini="true">
+								<legend id="cb_hostname">Hostname:</legend></fieldset>
+
+								<fieldset data-role="controlgroup" id="form_filename" data-mini="true">
+								<legend id="cb_username">Username:</legend></fieldset>
+							</form>
 						</div>
 
 
