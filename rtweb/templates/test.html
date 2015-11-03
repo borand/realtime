@@ -20,25 +20,24 @@
 	<div data-role="page" id="page1">
 
 		<div data-role="header" style="overflow:hidden;" data-theme="b">
-			<h1 id="headeer_status">RT WEB</h1>
+			<h1 id="headeer_status">Remote Logger</h1>
 			<a class="ui-btn-right" id="live" data-theme="a">OFFLINE</a>
 		</div>
 
 		<div data-role="tabs"  data-theme="a">
-
 			<div data-role="navbar">
 				<ul>
                     <li>
-						<a href="#datatables" data-icon="comment">DataTable</a>
+						<a href="#datatables">Logger</a>
 					</li>
 					<li>
-						<a href="#tab_console" data-icon="comment">Console</a>
+						<a href="#tab_console">Console</a>
 					</li>
+					<!-- <li>
+						<a href="#tab_debug">Debug</a>
+					</li> -->
 					<li>
-						<a href="#tab_debug" data-icon="comment">Debug</a>
-					</li>
-					<li>
-						<a href="#tab_settings"  data-icon="gear">Settings</a>
+						<a href="#tab_settings">Settings</a>
 					</li>
 				</ul>
 			</div>
@@ -47,29 +46,21 @@
 				<!-- TAB MAIN -->
 				<div id="datatables">
 
-					<div class="ui-corner-all custom-corners">
-						<div class="ui-bar ui-bar-a">
-							<h3>DataTables</h3>
-						</div>
-						<div class="ui-body ui-body-a">
+					<!-- <div class="ui-corner-all custom-corners">						 -->
+						<!-- <div class="ui-body ui-body-a"> -->
 							<!-- ######################################################################## -->
-					
-
 							  <table id="example"  cellspacing="0" width="100%" class="display compact"></table>
-
 							<!-- ######################################################################## -->
-						</div>
-					</div>
+						<!-- </div> -->
+					<!-- </div> -->
 
 				</div><!-- TAB MAIN -->
 				<!-- ######################################################################## -->
 				<!-- TAB CONSOLE -->
 				<div id="tab_console">
-					<div class="ui-corner-all custom-corners">
-						<div class="ui-bar ui-bar-a">
-							<h3>Console view</h3>
-						</div>
-						<div class="ui-body ui-body-a">
+					<!-- <div class="ui-corner-all custom-corners"> -->
+						<!-- <div class="ui-bar ui-bar-a"><h3>Console view</h3></div> -->
+						<!-- <div class="ui-body ui-body-a"> -->
 							<!-- <div data-role="content"> -->							
 							<textarea rows="15" name="textarea" id="ws_console" data-role="textarea" type="etc."></textarea>
 							
@@ -82,64 +73,14 @@
 							<input type="text" name="text-basic" id="json_cmd" value="" data-inline="true" data-theme="b">
 							</div>
 
-							
-
-						</div><!-- /content -->
-					</div>
+						<!-- </div>/content -->
+					<!-- </div> -->
 				</div><!-- TAB CONSOLE -->
-
-				<!-- ######################################################################## -->
-				<!-- TAB DEBUG -->
-				<div id="tab_debug">
-					<div class="ui-corner-all custom-corners">
-						<div class="ui-bar ui-bar-a">
-							<h3>Debug Console</h3>
-						</div>
-						<div class="ui-body ui-body-a">
-
-							<!-- <div data-role="content"> -->
-							<label for="textarea">Response</label>
-							<textarea rows="15" name="textarea" id="debug_console" data-role="textarea" type="etc."></textarea>
-							<a class="ui-btn ui-btn-inline ui-icon-delete ui-btn-icon-left" id="button_clear_debug_console">Clear History</a>
-
-
-						</div><!-- /content -->
-
-						<div class="ui-bar ui-bar-a">
-							<h3>Debug Settings</h3>
-						</div>
-
-						<div class="ui-body ui-body-a">
-
-							<div class="ui-field-contain">
-								<fieldset data-role="controlgroup" data-type="horizontal">
-									<legend>Debug Settings</legend>
-									<input type="checkbox" name="checkbox-6" id="debug_irq" class="custom">
-									<label for="debug_irq">IRQ</label>
-									<input type="checkbox" name="checkbox-6" id="debug_chart" class="custom">
-									<label for="debug_chart">Chart</label>
-
-									<input type="checkbox" name="checkbox-6" id="debug_websocket" class="custom">
-									<label for="debug_websocket">Websocket</label>
-									<input type="checkbox" name="checkbox-7" id="debug_js" class="custom">
-									<label for="debug_js"><em>Browser</em></label>
-									<input type="checkbox" name="checkbox-8" id="debug_all" class="custom">
-									<label for="debug_all">All</label>
-								</fieldset>
-							</div>
-						</div>
-
-													<!-- ######################################################################## -->
-					</div>
-				</div>
-				<!-- TAB DEBUG -->
 				<!-- ######################################################################## -->
 				<!-- TAB SETTINGS -->
 				<div id="tab_settings">
 					<div class="ui-corner-all custom-corners">
-						<div class="ui-bar ui-bar-a">
-							<h3>Websocket Settings</h3>
-						</div>
+						<div class="ui-bar ui-bar-a"><h3>Websocket Settings</h3></div>
 						<div class="ui-body ui-body-a">
 							<div class="ui-grid-b">
 
@@ -188,9 +129,7 @@
 			<!-- ######################################################################## -->
 
 		</div>
-		<div data-role="footer" data-theme="b">
-
-		</div>
+		<!-- <div data-role="footer" data-theme="b"></div> -->
 	</div>
 	<!-- <div role="main" class="ui-content"> -->
 </div>

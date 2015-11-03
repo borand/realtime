@@ -30,18 +30,18 @@ class Application(tornado.web.Application):
                 ]
         
         settings = dict(
-            cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
-            template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            static_path=os.path.join(os.path.dirname(__file__), "static"),
-            debug=True,
-            xsrf_cookies=False,
+            cookie_secret = "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
+            template_path = os.path.join(os.path.dirname(__file__), "templates"),
+            static_path   = os.path.join(os.path.dirname(__file__), "static"),
+            debug         = True,
+            xsrf_cookies  = False,
         )
         tornado.web.Application.__init__(self, handlers, **settings)
 
 if __name__ == '__main__':
 
-    template_path=os.path.join(os.path.dirname(__file__), "templates")
-    static_path=os.path.join(os.path.dirname(__file__), "static")
+    template_path = os.path.join(os.path.dirname(__file__), "templates")
+    static_path   = os.path.join(os.path.dirname(__file__), "static")
 
     app = Application()
     app.listen(8888)
