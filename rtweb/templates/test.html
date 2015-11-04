@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="utf-8"/>
-	<title>RT Web</title>
+	<title>Remote Logger</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 
 	<link rel="stylesheet" href="static/jquery.mobile-1.4.2.min.css" />
@@ -33,27 +33,71 @@
 					<li>
 						<a href="#tab_console">Console</a>
 					</li>
-					<!-- <li>
-						<a href="#tab_debug">Debug</a>
-					</li> -->
 					<li>
 						<a href="#tab_settings">Settings</a>
 					</li>
 				</ul>
 			</div>
-			<div role="main" class="ui-content">
+			<div data-role="collapsible" data-collapsed="true" data-mini="true">
+				<h4>Logger Settings</h4>				
+
+				<div class="ui-corner-all custom-corners">
+				<div class="ui-bar ui-bar-a">Toggle Visible:</div>
+  				<div class="ui-body ui-body-a">
+  				<!-- <div> -->
+  				<a class="toggle-vis" data-column="0">Time</a>  -  
+  				<a class="toggle-vis" data-column="1">Loger</a>  -  
+  				<a class="toggle-vis" data-column="2">Level</a>  -  
+  				<a class="toggle-vis" data-column="3">Line#</a>  -    				
+  				<a class="toggle-vis" data-column="4">Filename</a>  -  
+  				<a class="toggle-vis" data-column="5">Funcname</a>  -  
+  				<a class="toggle-vis" data-column="6">Hostname</a>  -  
+  				<a class="toggle-vis" data-column="7">Username</a>  -
+  				<a class="toggle-vis" data-column="8">Msg</a>
+  				</div>
+  				</div>
+
+
+			<div class="ui-corner-all custom-corners">
+				<div class="ui-bar ui-bar-a">Filter Fields</div>
+  				<div class="ui-body ui-body-a">
+
+  				<div class="ui-grid-d">
+  					    <div class="ui-block-a">
+  							<fieldset data-role="controlgroup" id="fieldset_name" data-mini="true">
+  							<legend id="cb_name">Logger:</legend></fieldset>  						
+  						</div>
+  						
+  						<div class="ui-block-b">
+  							<fieldset data-role="controlgroup" id="fieldset_hostname" data-mini="true">
+  							<legend id="cb_hostname">Hostname:</legend></fieldset>
+  						</div>
+  						
+  						<div class="ui-block-c">
+  							<fieldset data-role="controlgroup" id="fieldset_username" data-mini="true">
+  								<legend id="cb_username">Username:</legend></fieldset>
+  						</div>
+  						
+  						<div class="ui-block-d">
+  							<fieldset data-role="controlgroup" id="fieldset_filename" data-mini="true">
+  							<legend id="cb_filename">Filename:</legend></fieldset>
+  						</div>
+  						
+  						<div class="ui-block-e">
+  							<fieldset data-role="controlgroup" id="fieldset_other" data-mini="true">
+  							<legend id="cb_other"></legend></fieldset>
+  						</div>  						
+  				</div>
+				</div>
+			</div>
+
+			</div>
+
+			<div role="main" class="ui-content">				
 				<!-- ######################################################################## -->
 				<!-- TAB MAIN -->
 				<div id="datatables">
-
-					<!-- <div class="ui-corner-all custom-corners">						 -->
-						<!-- <div class="ui-body ui-body-a"> -->
-							<!-- ######################################################################## -->
-							  <table id="example"  cellspacing="0" width="100%" class="display compact"></table>
-							<!-- ######################################################################## -->
-						<!-- </div> -->
-					<!-- </div> -->
-
+					<table id="example"  cellspacing="0" width="100%" class="display compact"></table>
 				</div><!-- TAB MAIN -->
 				<!-- ######################################################################## -->
 				<!-- TAB CONSOLE -->
@@ -107,19 +151,7 @@
 							<button class="ui-btn ui-btn-inline" data-theme="b" id="button_clear">Clear</button>
 						</div>
 						
-						<div data-role="collapsible" data-collapsed="false">
-							<h4>Heading</h4>
-							<form>
-								<fieldset data-role="controlgroup" id="form_filename" data-mini="true">
-								<legend id="cb_filename">Filename:</legend>	</fieldset>
-
-								<fieldset data-role="controlgroup" id="form_filename" data-mini="true">
-								<legend id="cb_hostname">Hostname:</legend></fieldset>
-
-								<fieldset data-role="controlgroup" id="form_filename" data-mini="true">
-								<legend id="cb_username">Username:</legend></fieldset>
-							</form>
-						</div>
+						
 
 
 					</div>

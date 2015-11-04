@@ -1,9 +1,9 @@
-"""rtweb.py -
+"""onepage.py -
 
-Main webserver for rtweb
+Main webserver for onepage
 
 Usage:
-  rtweb.py [--port=PORT] [--host=HOST]
+  onepage.py [--port=PORT] [--host=HOST]
 
 Options:
   --port=PORT  [default: 8888]

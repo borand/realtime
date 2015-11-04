@@ -1,6 +1,8 @@
 ///////////////////////////////////////////
 // Global variables
 var table;
+//var JsonData = {"time": "04-Nov-2015 16:01:33","name": "test_a","level": 1,"line_no": 0,"filename": "none","funcname": "none","msg": "Test","hostname": "onw-aborowie-01","username": "aborowie"};
+
 /////////////////////////////////////////////////////////////////////
 // UTILITY FUNCTIONS
 //
@@ -27,14 +29,13 @@ function slugify(text)
     .replace(/-+$/, '');            // Trim - from end of text
 }
 
-function is_log_active(JsonData){
+function is_log_active(JsonData, fieldname){
     var tmp = [];
-    var x = $("input[name='cbcb_filename']");
-    var sn = "cb_" + slugify(JsonData.name);    
+    var x = $("input[name='cb_"+fieldname+"']");
+    var sn = "cb_" + slugify(JsonData[fieldname]);
     if (x.length){
         //$("input[name='cbcb_filename']").each(function() {if($(this).is(":checked")){tmp.push($(this).attr('id'));}});        
-        x.each(function() {if($(this).is(":checked")){tmp.push($(this).attr('id'));}});
-        console.log(tmp);
+        x.each(function() {if($(this).is(":checked")){tmp.push($(this).attr('id'));}});        
         return tmp.indexOf(sn) > -1;
     }
     else{
@@ -74,13 +75,14 @@ function open_websocket(hostname, hosturl) {
     };
 }
 
-function add_to_table_if_does_not_exist(table_id, fieldname){
-    //console.log(fieldname)
-    var sn = "cb_" + slugify(fieldname);
+function add_to_table_if_does_not_exist(Obj, fieldname){
+    //console.log(fieldname)    
+    var sn = "cb_" + slugify(Obj[fieldname]);
+    var table_id = 'cb_' + fieldname; 
     //console.log("fieldname= " + fieldname + " sn = " + sn)
     if (($("#"+sn).length) == 0)
     {
-        $("#"+table_id).prepend('<input type="checkbox" checked=true name="cb' + table_id +'" id="'+sn+'"><label for="'+sn+'">'+fieldname+'</label>').trigger('create');
+        $("#"+table_id).append('<input type="checkbox" data-mini="true" checked=true name="' + table_id +'" id="'+sn+'"><label for="'+sn+'">'+Obj[fieldname]+'</label>').trigger('create');
     }
 }
 
@@ -92,28 +94,30 @@ function server_message_handler(data){
         JsonData = JSON.parse(data);
         //console.log("JsonData = " + JsonData);
         //console.log("JsonData.time = " + JsonData.time);
-        var timestamp = new Date(JsonData.time);
-        var x = $("input[name='cbcb_filename']");
+        //var x = $("input[name='cbcb_filename']");
+
+        var timestamp = new Date(JsonData.time);        
         var row_data = [
             timestamp.toLocaleTimeString(),
             JsonData.name,
             JsonData.level,
             JsonData.line_no,
-            JsonData.msg,
             JsonData.filename,
             JsonData.funcname,
             JsonData.hostname,
             JsonData.username,
+            JsonData.msg,
             ];
 
-        add_to_table_if_does_not_exist("cb_filename", JsonData.name);
-        add_to_table_if_does_not_exist("cb_hostname", JsonData.hostname);
-        add_to_table_if_does_not_exist("cb_username", JsonData.username);
+        add_to_table_if_does_not_exist(JsonData,'name');
+        add_to_table_if_does_not_exist(JsonData,'hostname');
+        add_to_table_if_does_not_exist(JsonData,'username');
+        add_to_table_if_does_not_exist(JsonData,'filename');
 
         //table.row.add(row_data).draw();
         
-        if (is_log_active(JsonData)){
-            table.row.add(row_data).draw();
+        if (is_log_active(JsonData,'name')){
+             table.row.add(row_data).draw();
         };
         
 
@@ -141,24 +145,31 @@ $(document).ready(function() {
         "info":     true,        
         "scrollY": "700px",
         "bInfo": false,
-        "scrollX": true,
+        "scrollX": true,        
          "columns": [
-            { "title": "Time" },
-            { "title": "Loger" },
-            { "title": "Level" },
-            { "title": "Line#" },
-            { "title": "Msg" },
-            { "title": "Filename", "visible": false },
-            { "title": "Funcname", "visible": false },
-            { "title": "Hostname", "visible": false  },
-            { "title": "Username", "visible": false  },
-        ],
-         "columnDefs": [
-             { "width": "5%", "targets": 2 },
-             { "width": "2%", "targets": 3 },
-             { "width": "60%", "targets": 4 }
-             ]
+            { "title": "Time"    ,"width":"10%" },
+            { "title": "Loger"   ,"width":"10%" },
+            { "title": "Level"   ,"width":"5%"  },
+            { "title": "Line#"   ,"width":"5%"  },
+            { "title": "Filename","width":"10%", "visible": true },
+            { "title": "Funcname","width":"10%", "visible": true },
+            { "title": "Hostname","width":"10%", "visible": true  },
+            { "title": "Username","width":"10%", "visible": true  },
+            { "title": "Msg" }
+        ]
     });
+
+    $('a.toggle-vis').on( 'click', function (e) {
+        console.log(this);
+        e.preventDefault();
+ 
+        // Get the column API object
+        var column = table.column( $(this).attr('data-column') );
+ 
+        // Toggle the visibility
+        column.visible( ! column.visible() );
+        table.columns.adjust().draw();
+    } );
 
     $("#button_connect").click(function() {  connect_to_websocket_host();   });
     
