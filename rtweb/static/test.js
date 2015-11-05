@@ -1,6 +1,7 @@
 ///////////////////////////////////////////
 // Global variables
 var table;
+var JsonData;
 //var JsonData = {"time": "04-Nov-2015 16:01:33","name": "test_a","level": 1,"line_no": 0,"filename": "none","funcname": "none","msg": "Test","hostname": "onw-aborowie-01","username": "aborowie"};
 
 /////////////////////////////////////////////////////////////////////
@@ -90,13 +91,23 @@ function server_message_handler(data){
     //dbg('server_message_handler() data = ' + data, true)
     try {
 
-        //TODO - not sure why I have to parse twice
+        if($("#flip_show_raw").val() === 'on'){
+            console_response_msg(data, true);
+        };
         JsonData = JSON.parse(data);
         //console.log("JsonData = " + JsonData);
         //console.log("JsonData.time = " + JsonData.time);
         //var x = $("input[name='cbcb_filename']");
 
-        var timestamp = new Date(JsonData.time);        
+
+        var timestamp = new Date(JsonData.time);
+        // Convert level to numerical value
+        // We redefine python key value to our own standard, the higher the number the more debug info
+        var level_py = {"CRITICAL":0, "ERROR":0,"WARNING":1,"INFO":1,"DEBUG":3}
+        if (typeof JsonData.level === 'string' || JsonData.level instanceof String){
+             JsonData.level = level_py[JsonData.level.toUpperCase()];
+        };
+
         var row_data = [
             timestamp.toLocaleTimeString(),
             JsonData.name,
@@ -109,6 +120,8 @@ function server_message_handler(data){
             JsonData.msg,
             ];
 
+
+
         add_to_table_if_does_not_exist(JsonData,'name');
         add_to_table_if_does_not_exist(JsonData,'hostname');
         add_to_table_if_does_not_exist(JsonData,'username');
@@ -116,7 +129,9 @@ function server_message_handler(data){
 
         //table.row.add(row_data).draw();
         
-        if (is_log_active(JsonData,'name')){
+        if (is_log_active(JsonData,'name')     && is_log_active(JsonData,'hostname') &&
+            is_log_active(JsonData,'username') && is_log_active(JsonData,'filename') &&
+            parseInt($("#max_log_level").val()) >= JsonData.level){
              table.row.add(row_data).draw();
         };
         
@@ -140,10 +155,10 @@ $(document).ready(function() {
     connect_to_websocket_host();
     table = $('#example').DataTable({
         "order": [[ 0, "desc" ]],
-        "dom": '<"top"i>rt<"bottom"flp><"clear">',
+        "dom": '<"top"if>t<"bottom"lp><"clear">',
         "paging":   false,
         "info":     true,        
-        "scrollY": "700px",
+        "scrollY": "600px",
         "bInfo": false,
         "scrollX": true,        
          "columns": [
@@ -151,10 +166,10 @@ $(document).ready(function() {
             { "title": "Loger"   ,"width":"10%" },
             { "title": "Level"   ,"width":"5%"  },
             { "title": "Line#"   ,"width":"5%"  },
-            { "title": "Filename","width":"10%", "visible": true },
-            { "title": "Funcname","width":"10%", "visible": true },
-            { "title": "Hostname","width":"10%", "visible": true  },
-            { "title": "Username","width":"10%", "visible": true  },
+            { "title": "Filename","width":"10%", "visible": false },
+            { "title": "Funcname","width":"10%", "visible": false },
+            { "title": "Hostname","width":"10%", "visible": false  },
+            { "title": "Username","width":"10%", "visible": false  },
             { "title": "Msg" }
         ]
     });
@@ -177,4 +192,6 @@ $(document).ready(function() {
     $( "#button_test" ).click(function() {/* */});
 
     $( "#button_clear" ).click(function(){ table.clear().draw(); });
+    $( "#button_clear_console" ).click(function(){ $("#ws_console").html("");});
+
 });

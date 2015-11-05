@@ -21,24 +21,24 @@
 
 		<div data-role="header" style="overflow:hidden;" data-theme="b">
 			<h1 id="headeer_status">Remote Logger</h1>
-			<a class="ui-btn-right" id="live" data-theme="a">OFFLINE</a>
+			<a class="ui-btn-right" data-icon="power" id="live" data-theme="a">OFFLINE</a>
 		</div>
 
 		<div data-role="tabs"  data-theme="a">
-			<div data-role="navbar">
+			<div data-role="navbar" data-iconpos="left">
 				<ul>
                     <li>
-						<a href="#datatables">Logger</a>
+						<a href="#datatables" data-icon="home">Logger</a>
 					</li>
 					<li>
 						<a href="#tab_console">Console</a>
 					</li>
 					<li>
-						<a href="#tab_settings">Settings</a>
+						<a href="#tab_settings" data-icon="gear">Settings</a>
 					</li>
 				</ul>
 			</div>
-			<div data-role="collapsible" data-collapsed="true" data-mini="true">
+			<div data-role="collapsible" data-collapsed="true" data-mini="true" data-theme="b">
 				<h4>Logger Settings</h4>				
 
 				<div class="ui-corner-all custom-corners">
@@ -91,6 +91,14 @@
 				</div>
 			</div>
 
+				<div class="ui-corner-all custom-corners">
+					<div class="ui-bar ui-bar-a">Debug Level</div>
+					<div class="ui-body ui-body-a">
+						<label for="number-pattern">Number + [0-9]* pattern:</label>
+					<input type="number" name="number" pattern="[0-9]*" id="max_log_level" value="4">
+					</div>
+				</div>
+
 			</div>
 
 			<div role="main" class="ui-content">				
@@ -115,6 +123,7 @@
 							<div class="ui-field-contain">
 							<label for="text-basic">Command</label>
 							<input type="text" name="text-basic" id="json_cmd" value="" data-inline="true" data-theme="b">
+								<a class="ui-btn ui-btn-inline ui-icon-phone ui-btn-icon-left" id="button_clear_console">Clear Console</a>
 							</div>
 
 						<!-- </div>/content -->
@@ -126,7 +135,7 @@
 					<div class="ui-corner-all custom-corners">
 						<div class="ui-bar ui-bar-a"><h3>Websocket Settings</h3></div>
 						<div class="ui-body ui-body-a">
-							<div class="ui-grid-b">
+							<div class="ui-grid-d">
 
 								<div class="ui-block-a">
 									<label for="hostname">Host name</label>
@@ -150,7 +159,14 @@
 							<button class="ui-btn ui-btn-inline" data-theme="b" id="button_test">Test</button>
 							<button class="ui-btn ui-btn-inline" data-theme="b" id="button_clear">Clear</button>
 						</div>
-						
+
+						<div class="ui-body ui-body-a">
+							<label for="flip-2">Show raw messages</label>
+							<select name="flip-2" id="flip_show_raw" data-role="slider">
+								    <option value="off">Off</option>
+								    <option value="on">On</option>
+							</select>
+						</div>
 						
 
 

@@ -1,6 +1,6 @@
 from redislog import handlers, logger
 l = logger.RedisLogger('loger_test')
-l.addHandler(handlers.RedisHandler.to("log", host='localhost', port=6379))
+l.addHandler(handlers.RedisHandler.to("log", host='192.168.1.12', port=6379))
 
 def print_msg(l):
 	try:
