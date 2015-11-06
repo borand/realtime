@@ -21,7 +21,10 @@ import os
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("test.html")
+        # self.render("hydro.html")
+        host_ip = "192.168.1.12"
+        host_port = "8888"
+        self.render("hydro.html", title="Hydro", host_ip=host_ip, host_port=host_port, page_title='Hydro')
 
 class Application(tornado.web.Application):
     def __init__(self):

@@ -236,7 +236,7 @@ $(document).ready(function() {
 
 	dbg('Document ready - ready', true);
 	$("#live").css("background-color",'#C71C2C');	
-	connect_to_websocket_host();
+	//connect_to_websocket_host();
 	draw_plot("div_hydro");
 
  //    // The speed gauge
