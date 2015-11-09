@@ -133,9 +133,9 @@ function draw_plot(renderTo) {
         
         series: [{
             name: 'Power',
-            data: [6000],
+            data: [0],
             dataLabels: {
-                format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                format: '<div style="text-align:center"><span style="font-size:50px;color:' +
                     ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
                        '<span style="font-size:12px;color:silver">km/h</span></div>'
             },
@@ -222,9 +222,9 @@ function server_message_handler(data){
 }
 
 function connect_to_websocket_host(){
-	var hostname = $("#div_hydro").attr('hostip');
-	var hostport = $("#div_hydro").attr('hostport');
-	var hosturl  = 'data';
+	var hostname = $("input[name=host_ip]").val();
+	var hostport = $("input[name=host_port]").val();
+	var hosturl  = $("input[name=host_url]").val();
 	dbg('Pressed button: button_connect: [host, port] ' + hostname +':' + hostport + '/websocket/'+ hosturl, true);
 	open_websocket(hostname, hostport, hosturl);
 }
@@ -236,13 +236,11 @@ $(document).ready(function() {
 
 	dbg('Document ready - ready', true);
 	$("#live").css("background-color",'#C71C2C');	
-	//connect_to_websocket_host();
+	connect_to_websocket_host();
 	draw_plot("div_hydro");
-
- //    // The speed gauge
- //    $('#hydro').highcharts(Highcharts.merge(gaugeOptions, {
-
- //    }));
-    
 	////////////////////////////////////
+	$( "#button_connect" ).click(function(){
+		console.log("button_connect")
+		connect_to_websocket_host();
+	});
 });

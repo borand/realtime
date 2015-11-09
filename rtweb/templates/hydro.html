@@ -31,17 +31,22 @@
 
 			<a href="#popupLogin" data-rel="popup" data-position-to="window" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-gear ui-btn-icon-left ui-btn-b" data-transition="pop">Connection</a>
 			<div data-role="popup" id="popupLogin" data-theme="a" class="ui-corner-all">
-				    <form>
+				   
 				        <div style="padding:10px 20px;">
 				            <h3>Connect to host</h3>
 				            <button class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left" id="live">OFFLINE</button>
-				            <label for="un" class="ui-hidden-accessible">Host:</label>
-				            <input type="text" name="user" id="un" value="{{host_ip}}" data-theme="a">
-				            <label for="pw" class="ui-hidden-accessible">Port:</label>
-				            <input type="password" name="pass" id="pw" value="{{host_port}}" data-theme="a">
-				            <button type="submit" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left">Connect</button>
+				            <label for="host_ip">Host:</label>				            
+							<input type="text" name="host_ip" id="host_ip" value="{{host_ip}}" data-theme="a">
+			                        
+							<label for="host_port">Port:</label>
+							<input type="text" name="host_port" id="host_port" value="{{host_port}}" data-theme="a">
+
+							<label for="host_url">Chan:</label>				            
+							<input type="text" name="host_url" id="host_url" value="data" data-theme="a">
+				            
+							<button id="button_connect" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left">Connect</button>
 				        </div>
-				    </form>
+				   
 			</div>
 
 
